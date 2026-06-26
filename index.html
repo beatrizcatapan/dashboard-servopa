@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Ilha de Excelência - Projeto CX</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #F0F4F8;
+    --surface: #FFFFFF;
+    --surface2: #F8FAFC;
+    --border: #E2E8F0;
+    --blue: #2563EB;
+    --blue-light: #3b82f6;
+    --blue-bg: #EFF6FF;
+    --amber: #D97706;
+    --amber-bg: #FFFBEB;
+    --green: #16A34A;
+    --green-bg: #F0FDF4;
+    --red: #DC2626;
+    --red-bg: #FEF2F2;
+    --text: #0F172A;
+    --muted: #64748B;
+    --muted2: #94A3B8;
+    --font: 'Inter', sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; min-height: 100vh; }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 28px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon {
+    width: 36px; height: 36px; background: var(--blue); border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 700; color: #fff; letter-spacing: -1px;
+  }
+  .logo-text { font-size: 15px; font-weight: 600; color: var(--text); }
+  .logo-sub  { font-size: 11px; color: var(--muted2); font-weight: 400; margin-top: 1px; }
+  .filters { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .filter-btn {
+    padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--muted); cursor: pointer; font-size: 12px; font-family: var(--font);
+    transition: all .15s;
+  }
+  .filter-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+  .filter-btn:hover:not(.active) { border-color: var(--blue); color: var(--blue); background: var(--blue-bg); }
+  .date-filter { display: flex; gap: 6px; align-items: center; }
+  .date-input {
+    padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text); font-size: 11px; font-family: var(--font);
+    outline: none; width: 130px;
+  }
+  .date-input:focus { border-color: var(--blue); }
+  .date-sep { color: var(--muted2); font-size: 11px; }
+  .clear-btn {
+    padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--muted); cursor: pointer; font-size: 11px; font-family: var(--font);
+  }
+  .clear-btn:hover { border-color: var(--red); color: var(--red); background: var(--red-bg); }
+  .sheets-input {
+    padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text); font-size: 11px; font-family: var(--font); width: 240px;
+    outline: none;
+  }
+  .sheets-input:focus { border-color: var(--blue); }
+  .sheets-btn {
+    padding: 6px 12px; border-radius: 6px; border: none; background: var(--blue);
+    color: #fff; cursor: pointer; font-size: 11px; font-family: var(--font); white-space: nowrap;
+  }
+  .sheets-btn:hover { background: var(--blue-light); }
+
+  /* ── MAIN ── */
+  main { padding: 24px 28px; max-width: 1400px; margin: 0 auto; }
+
+  /* ── UPDATED BADGE ── */
+  .update-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; color: var(--muted); font-size: 11px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  /* ── BIG NUMBERS ── */
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 18px 20px; position: relative; overflow: hidden;
+  }
+  .card::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    border-radius: 3px 0 0 3px;
+  }
+  .card.blue::before  { background: var(--blue); }
+  .card.green::before { background: var(--green); }
+  .card.amber::before { background: var(--amber); }
+  .card.red::before   { background: var(--red); }
+  .card-label { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; margin-bottom: 8px; }
+  .card-value { font-size: 28px; font-weight: 700; color: var(--text); line-height: 1; font-family: var(--mono); }
+  .card-value.sm { font-size: 20px; }
+  .card-sub { font-size: 11px; color: var(--muted2); margin-top: 5px; }
+
+  /* ── SECTION TITLE ── */
+  .section-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* ── GRID ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .grid-3 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 24px; }
+  @media(max-width:900px) { .grid-2,.grid-3 { grid-template-columns: 1fr; } }
+
+  /* ── PANEL ── */
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+  .panel-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 16px; display: flex; align-items: center; gap: 6px; }
+
+  /* ── SLA BARS ── */
+  .sla-list { display: flex; flex-direction: column; gap: 10px; }
+  .sla-row { }
+  .sla-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; }
+  .sla-name { font-size: 11px; color: var(--muted); font-weight: 500; }
+  .sla-time { font-size: 12px; font-weight: 600; color: var(--text); font-family: var(--mono); }
+  .sla-bar-bg { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .sla-bar-fill { height: 100%; border-radius: 3px; transition: width 1s cubic-bezier(.4,0,.2,1); }
+
+  /* ── RANKING TABLE ── */
+  .rank-table { width: 100%; border-collapse: collapse; }
+  .rank-table th {
+    text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .07em;
+    color: var(--muted2); font-weight: 600; padding: 6px 10px; border-bottom: 1px solid var(--border);
+  }
+  .rank-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--text); }
+  .rank-table tr:last-child td { border-bottom: none; }
+  .rank-table tr:hover td { background: var(--surface2); }
+  .pos-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 50%; font-size: 10px; font-weight: 700;
+    background: var(--surface2); color: var(--muted2); border: 1px solid var(--border);
+  }
+  .pos-badge.top { background: var(--green-bg); color: var(--green); border-color: #bbf7d0; }
+  .pos-badge.bot { background: var(--red-bg); color: var(--red); border-color: #fecaca; }
+  .time-chip {
+    font-family: var(--mono); font-size: 11px; padding: 2px 7px; border-radius: 4px;
+    background: var(--surface2); color: var(--text); border: 1px solid var(--border);
+  }
+  .time-chip.fast { background: var(--green-bg); color: var(--green); border-color: #bbf7d0; }
+  .time-chip.slow { background: var(--red-bg); color: var(--red); border-color: #fecaca; }
+  .rev-tag { display: inline-block; font-size: 9px; padding: 1px 5px; border-radius: 3px; background: var(--amber-bg); color: var(--amber); font-weight: 600; border: 1px solid #fde68a; }
+
+  /* ── COMPARE UNIDADE ── */
+  .compare-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .compare-row:last-child { border-bottom: none; }
+  .compare-label { font-size: 11px; color: var(--muted); }
+  .compare-vals { display: flex; gap: 10px; }
+  .compare-val { text-align: right; }
+  .compare-val .v { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--text); }
+  .compare-val .u { font-size: 9px; color: var(--muted2); }
+
+  /* ── MOTIVOS ── */
+  .motivo-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); }
+  .motivo-row:last-child { border-bottom: none; }
+  .motivo-rank { font-size: 10px; font-weight: 700; color: var(--muted2); width: 18px; text-align: right; flex-shrink: 0; }
+  .motivo-label { font-size: 12px; color: var(--text); flex: 1; }
+  .motivo-bar-bg { width: 80px; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; flex-shrink: 0; }
+  .motivo-bar-fill { height: 100%; border-radius: 3px; }
+  .motivo-count { font-size: 11px; font-weight: 600; font-family: var(--mono); color: var(--text); width: 24px; text-align: right; flex-shrink: 0; }
+
+  /* ── DETAIL TABLE ── */
+  .search-wrap { margin-bottom: 12px; position: relative; }
+  .search-input {
+    width: 100%; padding: 8px 12px 8px 32px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface2); color: var(--text); font-size: 12px; font-family: var(--font); outline: none;
+  }
+  .search-input:focus { border-color: var(--blue); }
+  .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted2); font-size: 13px; }
+  .detail-wrap { overflow-x: auto; max-height: 340px; overflow-y: auto; }
+  .detail-table { width: 100%; border-collapse: collapse; min-width: 780px; }
+  .detail-table th {
+    text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .07em;
+    color: var(--muted2); font-weight: 600; padding: 6px 10px; border-bottom: 2px solid var(--border);
+    position: sticky; top: 0; background: var(--surface); z-index: 1;
+  }
+  .detail-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); font-size: 11px; white-space: nowrap; color: var(--text); }
+  .detail-table tr:hover td { background: var(--surface2); }
+  .badge-seminovo { font-size: 9px; padding: 1px 5px; border-radius: 3px; background: var(--blue-bg); color: var(--blue); font-weight: 600; }
+  .badge-unid { font-size: 9px; padding: 1px 5px; border-radius: 3px; background: var(--surface2); color: var(--muted); font-weight: 500; border: 1px solid var(--border); }
+  .na { color: var(--muted2); }
+  .status-ok  { color: var(--green); font-weight: 600; }
+  .status-warn{ color: var(--amber); font-weight: 600; }
+  .status-bad { color: var(--red);   font-weight: 600; }
+
+  /* ── CONFIG PANEL ── */
+  .config-toggle {
+    padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--muted); cursor: pointer; font-size: 12px;
+    font-family: var(--font); display: flex; align-items: center; gap: 6px; white-space: nowrap;
+  }
+  .config-toggle:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-bg); }
+  .config-drawer {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 20px 28px; display: none; gap: 24px; flex-wrap: wrap; align-items: flex-start;
+  }
+  .config-drawer.open { display: flex; }
+  .config-section { min-width: 260px; }
+  .config-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase;
+    letter-spacing: .07em; margin-bottom: 8px; }
+  .config-url-row { display: flex; gap: 8px; }
+  .config-url { flex: 1; padding: 7px 10px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--surface2); color: var(--text); font-size: 12px; font-family: var(--font); outline: none; }
+  .config-url:focus { border-color: var(--blue); }
+  .config-tabs { display: flex; flex-direction: column; gap: 6px; }
+  .tab-row { display: grid; grid-template-columns: 1fr 1fr 28px; gap: 6px; align-items: center; }
+  .tab-input { padding: 5px 8px; border-radius: 5px; border: 1px solid var(--border);
+    background: var(--surface2); color: var(--text); font-size: 11px; font-family: var(--font); outline: none; width: 100%; }
+  .tab-input:focus { border-color: var(--blue); }
+  .tab-del { width: 24px; height: 24px; border-radius: 4px; border: 1px solid var(--border);
+    background: transparent; color: var(--muted2); cursor: pointer; font-size: 13px;
+    display: flex; align-items: center; justify-content: center; padding: 0; font-family: var(--font); }
+  .tab-del:hover { border-color: var(--red); color: var(--red); background: var(--red-bg); }
+  .add-tab-btn { margin-top: 6px; padding: 5px 10px; border-radius: 5px; border: 1px dashed var(--border);
+    background: transparent; color: var(--muted); cursor: pointer; font-size: 11px; font-family: var(--font); width: 100%; }
+  .add-tab-btn:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-bg); }
+  .sync-btn { padding: 8px 18px; border-radius: 6px; border: none; background: var(--blue);
+    color: #fff; cursor: pointer; font-size: 12px; font-family: var(--font); font-weight: 600; white-space: nowrap; }
+  .sync-btn:hover { background: var(--blue-light); }
+  .sync-btn:disabled { background: var(--muted2); cursor: not-allowed; }
+  .sync-status { font-size: 11px; color: var(--muted); margin-top: 8px; min-height: 16px; }
+  .config-hint { font-size: 10px; color: var(--muted2); margin-top: 6px; line-height: 1.5; }
+
+  /* ── FILIAL RANKING ── */
+  .filial-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+  .filial-title {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--blue); border-bottom: 2px solid var(--blue); padding-bottom: 6px; margin-bottom: 10px;
+  }
+  .filial-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--border); }
+  .filial-row:last-child { border-bottom: none; }
+  .filial-pos { font-size: 10px; font-weight: 700; width: 18px; text-align: right; flex-shrink: 0; }
+  .filial-name { font-size: 12px; color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .filial-bar-bg { width: 55px; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; flex-shrink: 0; }
+  .filial-bar-fill { height: 100%; border-radius: 3px; }
+  .filial-count { font-size: 12px; font-weight: 700; font-family: var(--mono); color: var(--text); width: 22px; text-align: right; flex-shrink: 0; }
+
+  .chart-wrap { position: relative; height: 200px; }
+
+  /* ── FOOTER ── */
+  footer { text-align: center; color: var(--muted2); font-size: 10px; padding: 20px; border-top: 1px solid var(--border); margin-top: 10px; background: var(--surface); }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon" style="font-size:13px">VW<br>BYD</div>
+    <div>
+      <div class="logo-text">Dashboard Ilha de Excelência</div>
+      <div class="logo-sub">Projeto CX · VW &amp; BYD · Servopa</div>
+    </div>
+  </div>
+  <div class="filters" id="unitFilters">
+    <button class="filter-btn active" onclick="setUnit('Todas')">Todas</button>
+  </div>
+  <div class="date-filter">
+    <span class="date-sep">De</span>
+    <input type="date" class="date-input" id="dateFrom" onchange="applyDateFilter()">
+    <span class="date-sep">até</span>
+    <input type="date" class="date-input" id="dateTo" onchange="applyDateFilter()">
+    <button class="clear-btn" onclick="clearDates()">✕</button>
+  </div>
+  <button class="config-toggle" onclick="toggleConfig()">⚙ Configurar Planilha</button>
+</header>
+
+<!-- CONFIG DRAWER -->
+<div class="config-drawer" id="configDrawer">
+  <div class="config-section">
+    <div class="config-label">URL da Planilha (Google Sheets)</div>
+    <div class="config-url-row">
+      <input class="config-url" id="sheetBaseUrl" placeholder="https://docs.google.com/spreadsheets/d/SEU_ID/..." />
+    </div>
+    <div class="config-hint">Cole o link da <strong>barra de endereço</strong> enquanto edita a planilha (não o link de publicação).<br>
+    Exemplo: <code style="font-size:10px">...spreadsheets/d/1AbCdEfGh.../edit</code><br>
+    A planilha também precisa estar compartilhada: botão <strong>Compartilhar → Qualquer pessoa com o link → Leitor</strong></div>
+  </div>
+  <div class="config-section" style="flex:1;min-width:340px">
+    <div class="config-label">Abas e Nomes de Filiais</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 28px;gap:4px;margin-bottom:6px">
+      <span style="font-size:10px;color:var(--muted2);padding:0 4px">Nome da aba (exato)</span>
+      <span style="font-size:10px;color:var(--muted2);padding:0 4px">Exibir como</span>
+      <span></span>
+    </div>
+    <div class="config-tabs" id="tabList"></div>
+    <button class="add-tab-btn" onclick="addTabRow()">+ Adicionar filial</button>
+  </div>
+  <div class="config-section" style="display:flex;flex-direction:column;gap:8px;justify-content:flex-start;padding-top:22px">
+    <button class="sync-btn" id="syncBtn" onclick="syncAllTabs()">↻ Sincronizar todas as filiais</button>
+    <div class="sync-status" id="syncStatus"></div>
+  </div>
+</div>
+
+<main>
+  <div class="update-bar"><div class="dot"></div><span id="updateLabel">Dados carregados da planilha local</span></div>
+
+  <!-- BIG NUMBERS -->
+  <div class="cards" id="cards"></div>
+
+  <!-- ROW 1: SLA + Compare + Motivos -->
+  <div class="grid-3">
+    <div class="panel" id="slaPanel">
+      <div class="panel-title">⏱ SLA Médio por Etapa <span style="font-size:10px;color:var(--muted);font-weight:400;margin-left:4px">(horas úteis · seg–sex 08h–18h)</span></div>
+      <div class="sla-list" id="slaList"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="panel">
+        <div class="panel-title">🏢 Comparativo Unidades</div>
+        <div id="comparePanel"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">⚠️ Top Motivos — Revisão Faturamento</div>
+        <div id="motivosFat"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">⚠️ Top Motivos — Revisão Entrada</div>
+        <div id="motivosEnt"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 2: Charts -->
+  <div class="grid-2" style="margin-bottom:24px">
+    <div class="panel">
+      <div class="panel-title">📊 Distribuição SLA Total (Envio Entrada → NF 0km)</div>
+      <div class="chart-wrap"><canvas id="histChart"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">🔁 Revisões por Vendedor</div>
+      <div class="chart-wrap"><canvas id="revChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- RANKING POR FILIAL -->
+  <div class="panel" style="margin-bottom:24px">
+    <div class="panel-title">🏆 Ranking de Vendedores — Vendas (NF 0km emitidas) por Filial</div>
+    <div id="rankingFiliais"></div>
+  </div>
+
+  <!-- DETAIL TABLE -->
+  <div class="panel" style="margin-bottom:24px">
+    <div class="panel-title">📋 Propostas Detalhadas</div>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="searchInput" placeholder="Buscar por proposta, vendedor..." oninput="renderDetail()">
+    </div>
+    <div class="detail-wrap">
+      <table class="detail-table" id="detailTable"></table>
+    </div>
+  </div>
+
+  <!-- LEGEND -->
+  <div class="panel" style="margin-bottom:8px">
+    <div class="section-title">Legenda</div>
+    <div style="display:flex;flex-wrap:wrap;gap:16px;font-size:11px;color:var(--muted2)">
+      <span>🟢 ≤ 4h = Dentro do esperado</span>
+      <span>🟡 4–12h = Atenção</span>
+      <span>🔴 &gt; 12h = Fora do prazo</span>
+      <span>★ Revisão registrada</span>
+      <span>— Etapa não registrada / não aplicável</span>
+    </div>
+  </div>
+</main>
+
+<footer>Dashboard Ilha de Excelência · Projeto CX · Servopa VW &amp; BYD · <span id="footerDate"></span></footer>
+
+<script>
+// ─── RAW DATA ────────────────────────────────────────────────────────────────
+const RAW = [{"proposta":"26143","seminovo":"NAO","vendedor":"SIDNEY GONCALVES DOS SANTOS","unidade":"Mário Tourinho","abertura":"2026-06-11T00:00:00","aprovacao":"2026-06-11T17:57:00","criacao_fluxo":"2026-06-11T18:13:00","envio_fluxo_fat":"2026-06-11T18:40:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-06-15T22:02:31","nf_0km":"2026-06-12T08:59:00","nf_seminovo":null},{"proposta":"26234","seminovo":"SIM","vendedor":"PRISCILLA STEPHANI FIGUEIREDO","unidade":"Mário Tourinho","abertura":"2026-06-20T00:00:00","aprovacao":"2026-06-22T15:22:00","criacao_fluxo":"2026-06-23T09:39:00","envio_fluxo_fat":"2026-06-23T10:29:00","revisao_fat":"2026-06-24T13:30:00","envio_fluxo_entrada":"2026-06-23T10:51:00","revisao_entrada":"2026-06-24T09:41:00","checagem_desp":"2026-06-23T15:05:00","emplacamento":null,"nf_0km":"2026-06-24T15:37:00","nf_seminovo":null},{"proposta":"26114","seminovo":"NAO","vendedor":"MARCIO PADULA","unidade":"Mário Tourinho","abertura":"2026-06-09T00:00:00","aprovacao":"2026-06-10T17:54:00","criacao_fluxo":"2026-06-11T09:49:00","envio_fluxo_fat":"2026-06-11T09:53:00","revisao_fat":"2026-06-11T10:28:00","envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-06-17T22:35:10","nf_0km":"2026-06-11T11:11:00","nf_seminovo":null},{"proposta":"26094","seminovo":"NAO","vendedor":"JHESYKA PLATNER CAMARA","unidade":"Mário Tourinho","abertura":"2026-06-05T00:00:00","aprovacao":"2026-06-08T14:03:00","criacao_fluxo":"2026-06-08T15:22:00","envio_fluxo_fat":"2026-06-08T15:51:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-08T15:55:00","nf_seminovo":null},{"proposta":"25506","seminovo":"SIM","vendedor":"JACSON DURAES SANTOS","unidade":"Mário Tourinho","abertura":"2026-04-18T00:00:00","aprovacao":"2026-04-20T17:39:00","criacao_fluxo":"2026-04-22T08:44:00","envio_fluxo_fat":"2026-04-22T09:02:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-05-07T20:08:39","nf_0km":"2026-04-22T15:48:00","nf_seminovo":null},{"proposta":"26170","seminovo":"SIM","vendedor":"MARCIO PADULA","unidade":"Mário Tourinho","abertura":"2026-06-13T00:00:00","aprovacao":"2026-06-15T15:31:00","criacao_fluxo":"2026-06-15T15:42:00","envio_fluxo_fat":"2026-06-15T15:48:00","revisao_fat":"2026-06-16T17:24:00","envio_fluxo_entrada":"2026-06-15T16:51:00","revisao_entrada":null,"checagem_desp":"2026-06-16T14:12:00","emplacamento":"2026-06-17T22:34:40","nf_0km":"2026-06-16T17:46:00","nf_seminovo":"2026-06-24T10:45:00"},{"proposta":"26105","seminovo":"SIM","vendedor":"REINALDO MARCELO NOVATZKI","unidade":"Mário Tourinho","abertura":"2026-06-08T00:00:00","aprovacao":"2026-06-10T11:09:00","criacao_fluxo":"2026-06-10T11:18:00","envio_fluxo_fat":"2026-06-10T11:22:00","revisao_fat":null,"envio_fluxo_entrada":"2026-06-10T11:43:00","revisao_entrada":null,"checagem_desp":"2026-06-10T15:46:00","emplacamento":"2026-06-15T20:34:32","nf_0km":"2026-06-10T17:21:00","nf_seminovo":"2026-06-15T17:46:00"},{"proposta":"25586","seminovo":"NAO","vendedor":"JHESYKA PLATNER CAMARA","unidade":"Mário Tourinho","abertura":"2026-04-27T00:00:00","aprovacao":"2026-04-30T16:41:00","criacao_fluxo":"2026-04-30T16:45:00","envio_fluxo_fat":"2026-04-30T17:09:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-04-30T18:23:00","nf_seminovo":null},{"proposta":"26269","seminovo":"NAO","vendedor":"REINALDO MARCELO NOVATZKI","unidade":"Mário Tourinho","abertura":"2026-06-25T00:00:00","aprovacao":"2026-06-25T10:51:00","criacao_fluxo":"2026-06-25T11:00:00","envio_fluxo_fat":"2026-06-25T11:09:00","revisao_fat":"2026-06-25T11:36:00","envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-25T12:48:00","nf_seminovo":null},{"proposta":"26043","seminovo":"NAO","vendedor":"PATRICK EDERSON DA SILVA","unidade":"Mário Tourinho","abertura":"2026-05-30T00:00:00","aprovacao":"2026-05-30T18:02:00","criacao_fluxo":"2026-05-30T18:04:00","envio_fluxo_fat":"2026-05-30T18:27:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-06-18T21:10:58","nf_0km":"2026-05-30T18:53:00","nf_seminovo":null},{"proposta":"25932","seminovo":"SIM","vendedor":"JHESYKA PLATNER CAMARA","unidade":"Mário Tourinho","abertura":"2026-05-23T00:00:00","aprovacao":"2026-05-30T16:04:00","criacao_fluxo":"2026-05-30T16:45:00","envio_fluxo_fat":"2026-05-30T17:19:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-03T09:18:00","nf_seminovo":null},{"proposta":"25727","seminovo":"SIM","vendedor":"REINALDO MARCELO NOVATZKI","unidade":"Mário Tourinho","abertura":"2026-05-08T00:00:00","aprovacao":"2026-05-29T11:13:00","criacao_fluxo":"2026-05-29T11:22:00","envio_fluxo_fat":"2026-05-29T14:20:00","revisao_fat":null,"envio_fluxo_entrada":"2026-05-29T14:44:00","revisao_entrada":null,"checagem_desp":"2026-05-29T16:36:00","emplacamento":null,"nf_0km":"2026-05-29T18:19:00","nf_seminovo":"2026-06-25T08:41:00"},{"proposta":"25988","seminovo":"NAO","vendedor":"MAURICIO TALISIN","unidade":"Mário Tourinho","abertura":"2026-05-28T00:00:00","aprovacao":"2026-05-29T13:52:00","criacao_fluxo":"2026-05-29T14:01:00","envio_fluxo_fat":"2026-05-29T14:30:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-05-30T19:06:45","nf_0km":"2026-05-29T18:38:00","nf_seminovo":null},{"proposta":"25801","seminovo":"NAO","vendedor":"JHESYKA PLATNER CAMARA","unidade":"Mário Tourinho","abertura":"2026-05-14T00:00:00","aprovacao":"2026-05-14T17:42:00","criacao_fluxo":"2026-05-14T16:15:00","envio_fluxo_fat":"2026-05-14T16:23:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-05-14T16:43:00","nf_seminovo":null},{"proposta":"26091","seminovo":"NAO","vendedor":"GUILHERME SPADACCINO","unidade":"Mário Tourinho","abertura":"2026-06-05T00:00:00","aprovacao":"2026-06-08T16:20:00","criacao_fluxo":"2026-06-08T11:43:00","envio_fluxo_fat":"2026-06-08T16:22:00","revisao_fat":"2026-06-08T17:25:00","envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-08T17:42:00","nf_seminovo":null},{"proposta":"25918","seminovo":"SIM","vendedor":"MAURICIO TALISIN","unidade":"Mário Tourinho","abertura":"2026-05-22T00:00:00","aprovacao":"2026-05-26T12:20:00","criacao_fluxo":"2026-05-26T11:59:00","envio_fluxo_fat":"2026-05-26T15:29:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-05-30T19:39:51","nf_0km":"2026-05-27T18:14:00","nf_seminovo":null},{"proposta":"25856","seminovo":"SIM","vendedor":"PATRICK EDERSON DA SILVA","unidade":"Mário Tourinho","abertura":"2026-05-18T00:00:00","aprovacao":"2026-05-22T12:02:00","criacao_fluxo":"2026-05-22T13:27:00","envio_fluxo_fat":"2026-05-22T13:29:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-05-22T17:36:00","nf_seminovo":null},{"proposta":"26033","seminovo":"SIM","vendedor":"MAURICIO TALISIN","unidade":"Mário Tourinho","abertura":"2026-05-30T00:00:00","aprovacao":"2026-05-30T17:00:00","criacao_fluxo":"2026-05-30T16:56:00","envio_fluxo_fat":"2026-05-30T17:11:00","revisao_fat":null,"envio_fluxo_entrada":"2026-05-30T17:36:00","revisao_entrada":null,"checagem_desp":"2026-06-01T12:10:00","emplacamento":null,"nf_0km":"2026-06-01T15:57:00","nf_seminovo":"2026-06-25T11:00:00"},{"proposta":"25927","seminovo":"NAO","vendedor":"PRISCILLA STEPHANI FIGUEIREDO","unidade":"Mário Tourinho","abertura":"2026-05-23T00:00:00","aprovacao":"2026-05-26T13:28:00","criacao_fluxo":"2026-05-26T13:39:00","envio_fluxo_fat":"2026-05-26T13:46:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-05-26T15:21:00","nf_seminovo":null},{"proposta":"25841","seminovo":"NAO","vendedor":"GUILHERME SPADACCINO","unidade":"Mário Tourinho","abertura":"2026-05-16T00:00:00","aprovacao":"2026-05-18T14:25:00","criacao_fluxo":"2026-05-18T14:27:00","envio_fluxo_fat":"2026-05-18T14:43:00","revisao_fat":"2026-05-18T15:46:00","envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-05-20T20:04:07","nf_0km":"2026-05-18T15:49:00","nf_seminovo":null},{"proposta":"25761","seminovo":"SIM","vendedor":"PATRICK EDERSON DA SILVA","unidade":"Mário Tourinho","abertura":"2026-05-11T00:00:00","aprovacao":"2026-05-13T11:46:00","criacao_fluxo":"2026-05-13T12:17:00","envio_fluxo_fat":"2026-05-13T12:20:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-05-20T20:05:48","nf_0km":"2026-05-13T16:00:00","nf_seminovo":null},{"proposta":"25680","seminovo":"SIM","vendedor":"JACSON DURAES SANTOS","unidade":"Mário Tourinho","abertura":"2026-05-05T00:00:00","aprovacao":"2026-05-07T13:35:00","criacao_fluxo":"2026-05-07T13:41:00","envio_fluxo_fat":"2026-05-07T13:47:00","revisao_fat":"2026-05-07T14:35:00","envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-06-10T13:53:07","nf_0km":"2026-05-07T15:07:00","nf_seminovo":null},{"proposta":"26100","seminovo":"NAO","vendedor":"GUILHERME SPADACCINO","unidade":"Mário Tourinho","abertura":"2026-06-06T00:00:00","aprovacao":"2026-06-08T10:22:00","criacao_fluxo":"2026-06-08T10:30:00","envio_fluxo_fat":"2026-06-08T10:33:00","revisao_fat":"2026-06-08T12:13:00","envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-08T13:15:00","nf_seminovo":null},{"proposta":"26159","seminovo":"SIM","vendedor":"MARCIO PADULA","unidade":"Mário Tourinho","abertura":"2026-06-12T00:00:00","aprovacao":"2026-06-15T16:40:00","criacao_fluxo":"2026-06-15T16:29:00","envio_fluxo_fat":"2026-06-15T16:46:00","revisao_fat":null,"envio_fluxo_entrada":"2026-06-15T17:15:00","revisao_entrada":"2026-06-17T13:44:00","checagem_desp":"2026-06-17T16:38:00","emplacamento":"2026-06-18T21:12:44","nf_0km":"2026-06-17T17:14:00","nf_seminovo":"2026-06-24T13:45:00"},{"proposta":"26258","seminovo":"NAO","vendedor":"REINALDO MARCELO NOVATZKI","unidade":"Mário Tourinho","abertura":"2026-06-24T00:00:00","aprovacao":"2026-06-24T15:54:00","criacao_fluxo":"2026-06-24T16:00:00","envio_fluxo_fat":"2026-06-24T16:06:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-24T16:43:00","nf_seminovo":null},{"proposta":"26198","seminovo":"SIM","vendedor":"KEILA CRISTINA KUREK DE LIMA","unidade":"Mário Tourinho","abertura":"2026-06-16T00:00:00","aprovacao":"2026-06-17T16:32:00","criacao_fluxo":"2026-06-17T16:13:00","envio_fluxo_fat":"2026-06-17T16:34:00","revisao_fat":null,"envio_fluxo_entrada":"2026-06-17T16:54:00","revisao_entrada":null,"checagem_desp":"2026-06-18T11:09:00","emplacamento":"2026-06-18T21:12:16","nf_0km":"2026-06-18T14:36:00","nf_seminovo":"2026-06-23T17:24:00"},{"proposta":"26039","seminovo":"SIM","vendedor":"CASA SERVOPA MARIO TOURINHO - 1.11","unidade":"Mário Tourinho","abertura":"2026-05-30T00:00:00","aprovacao":"2026-05-30T17:23:00","criacao_fluxo":"2026-05-30T17:30:00","envio_fluxo_fat":"2026-05-30T17:44:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-06-09T21:48:57","nf_0km":"2026-06-02T11:56:00","nf_seminovo":null},{"proposta":"25581","seminovo":"NAO","vendedor":"MARCIO PADULA","unidade":"Mário Tourinho","abertura":"2026-04-27T00:00:00","aprovacao":"2026-04-30T11:23:00","criacao_fluxo":"2026-04-30T11:43:00","envio_fluxo_fat":"2026-04-30T11:51:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-04-30T14:47:00","nf_seminovo":null},{"proposta":"26028","seminovo":"SIM","vendedor":"PRISCILLA STEPHANI FIGUEIREDO","unidade":"Mário Tourinho","abertura":"2026-05-30T00:00:00","aprovacao":"2026-05-30T16:29:00","criacao_fluxo":"2026-05-30T16:34:00","envio_fluxo_fat":"2026-05-30T16:37:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-05T16:14:00","nf_seminovo":null},{"proposta":"25602","seminovo":"NAO","vendedor":"JHESYKA PLATNER CAMARA","unidade":"Mário Tourinho","abertura":"2026-04-28T00:00:00","aprovacao":"2026-04-30T18:08:00","criacao_fluxo":"2026-04-30T18:13:00","envio_fluxo_fat":"2026-04-30T18:26:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-04-30T19:40:00","nf_seminovo":null},{"proposta":"25741","seminovo":"SIM","vendedor":"SIDNEY GONCALVES DOS SANTOS","unidade":"Mário Tourinho","abertura":"2026-05-09T00:00:00","aprovacao":"2026-05-13T10:19:00","criacao_fluxo":"2026-05-11T18:16:00","envio_fluxo_fat":"2026-05-13T16:36:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-05-18T21:17:37","nf_0km":"2026-05-14T14:58:00","nf_seminovo":null},{"proposta":"25480","seminovo":"NAO","vendedor":"PRISCILLA STEPHANI FIGUEIREDO","unidade":"Mário Tourinho","abertura":"2026-04-16T00:00:00","aprovacao":"2026-04-27T14:34:00","criacao_fluxo":"2026-04-27T14:42:00","envio_fluxo_fat":"2026-04-27T14:57:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-04-27T15:19:00","nf_seminovo":null},{"proposta":"25578","seminovo":"SIM","vendedor":"JACSON DURAES SANTOS","unidade":"Mário Tourinho","abertura":"2026-04-27T00:00:00","aprovacao":"2026-04-27T12:31:00","criacao_fluxo":"2026-04-27T12:33:00","envio_fluxo_fat":"2026-04-27T12:41:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-05-21T21:24:52","nf_0km":"2026-04-28T09:49:00","nf_seminovo":null},{"proposta":"25600","seminovo":"SIM","vendedor":"GUILHERME SPADACCINO","unidade":"Mário Tourinho","abertura":"2026-04-28T00:00:00","aprovacao":"2026-04-29T17:55:00","criacao_fluxo":"2026-04-30T09:29:00","envio_fluxo_fat":"2026-04-30T09:45:00","revisao_fat":"2026-04-30T16:41:00","envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-05-15T11:21:40","nf_0km":"2026-04-30T17:27:00","nf_seminovo":null},{"proposta":"25110","seminovo":"SIM","vendedor":"REINALDO MARCELO NOVATZKI","unidade":"Mário Tourinho","abertura":"2026-03-14T00:00:00","aprovacao":"2026-03-18T15:18:00","criacao_fluxo":"2026-03-18T15:26:00","envio_fluxo_fat":"2026-03-18T15:31:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-03-18T17:45:00","nf_seminovo":null},{"proposta":"25069","seminovo":"SIM","vendedor":"PATRICK EDERSON DA SILVA","unidade":"Mário Tourinho","abertura":"2026-03-11T00:00:00","aprovacao":"2026-03-12T11:57:00","criacao_fluxo":"2026-03-12T12:10:00","envio_fluxo_fat":"2026-03-12T12:12:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-03-12T12:55:00","nf_seminovo":null},{"proposta":"25472","seminovo":"NAO","vendedor":"MARCIO PADULA","unidade":"Mário Tourinho","abertura":"2026-04-15T00:00:00","aprovacao":"2026-04-16T16:55:00","criacao_fluxo":"2026-04-16T17:06:00","envio_fluxo_fat":"2026-04-16T17:10:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-04-22T18:19:15","nf_0km":"2026-04-17T10:11:00","nf_seminovo":null},{"proposta":"25526","seminovo":"SIM","vendedor":"JACSON DURAES SANTOS","unidade":"Mário Tourinho","abertura":"2026-04-20T00:00:00","aprovacao":"2026-04-29T15:01:00","criacao_fluxo":"2026-04-29T15:08:00","envio_fluxo_fat":"2026-04-29T17:01:00","revisao_fat":null,"envio_fluxo_entrada":"2026-04-29T17:12:00","revisao_entrada":null,"checagem_desp":"2026-04-29T18:11:00","emplacamento":null,"nf_0km":"2026-04-30T14:26:00","nf_seminovo":null},{"proposta":"25832","seminovo":"NAO","vendedor":"MARCIO PADULA","unidade":"Mário Tourinho","abertura":"2026-05-15T00:00:00","aprovacao":"2026-05-28T10:02:00","criacao_fluxo":"2026-05-28T10:11:00","envio_fluxo_fat":"2026-05-28T10:17:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-05-28T10:48:00","nf_seminovo":null},{"proposta":"25726","seminovo":"SIM","vendedor":"KEILA CRISTINA KUREK DE LIMA","unidade":"Mário Tourinho","abertura":"2026-05-08T00:00:00","aprovacao":"2026-05-08T17:54:00","criacao_fluxo":"2026-05-11T16:17:00","envio_fluxo_fat":"2026-05-11T16:54:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-05-22T15:10:55","nf_0km":"2026-05-13T09:40:00","nf_seminovo":null},{"proposta":"25485","seminovo":"SIM","vendedor":"PRISCILLA STEPHANI FIGUEIREDO","unidade":"Mário Tourinho","abertura":"2026-04-17T00:00:00","aprovacao":"2026-04-17T17:31:00","criacao_fluxo":"2026-04-17T17:34:00","envio_fluxo_fat":"2026-04-17T17:44:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-04-22T18:10:08","nf_0km":"2026-04-20T10:31:00","nf_seminovo":null},{"proposta":"25498","seminovo":"NAO","vendedor":"MARCIO PADULA","unidade":"Mário Tourinho","abertura":"2026-04-18T00:00:00","aprovacao":"2026-04-20T10:35:00","criacao_fluxo":"2026-04-20T11:02:00","envio_fluxo_fat":"2026-04-20T11:56:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-04-20T15:22:00","nf_seminovo":null},{"proposta":"25937","seminovo":"SIM","vendedor":"MARCIO PADULA","unidade":"Mário Tourinho","abertura":"2026-05-23T00:00:00","aprovacao":"2026-05-29T18:11:00","criacao_fluxo":"2026-05-29T18:21:00","envio_fluxo_fat":"2026-05-29T18:30:00","revisao_fat":null,"envio_fluxo_entrada":"2026-05-29T18:52:00","revisao_entrada":null,"checagem_desp":"2026-05-30T12:04:00","emplacamento":"2026-05-30T19:07:12","nf_0km":"2026-05-30T15:20:00","nf_seminovo":"2026-06-10T10:31:00"},{"proposta":"25465","seminovo":"SIM","vendedor":"KEILA CRISTINA KUREK DE LIMA","unidade":"Mário Tourinho","abertura":"2026-04-15T00:00:00","aprovacao":"2026-04-22T15:39:00","criacao_fluxo":"2026-04-24T14:42:00","envio_fluxo_fat":"2026-04-24T15:07:00","revisao_fat":"2026-04-27T13:45:00","envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-04-27T14:53:00","nf_seminovo":null},{"proposta":"25307","seminovo":"SIM","vendedor":"GUILHERME SPADACCINO","unidade":"Mário Tourinho","abertura":"2026-03-30T00:00:00","aprovacao":"2026-03-31T19:11:00","criacao_fluxo":"2026-03-31T11:50:00","envio_fluxo_fat":"2026-03-31T19:13:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-03-31T19:39:00","nf_seminovo":null},{"proposta":"25720","seminovo":"SIM","vendedor":"JHESYKA PLATNER CAMARA","unidade":"Mário Tourinho","abertura":"2026-05-07T00:00:00","aprovacao":"2026-05-29T17:16:00","criacao_fluxo":"2026-05-29T14:43:00","envio_fluxo_fat":"2026-05-29T17:31:00","revisao_fat":"2026-05-30T15:51:00","envio_fluxo_entrada":"2026-05-30T09:36:00","revisao_entrada":null,"checagem_desp":"2026-05-30T12:17:00","emplacamento":"2026-06-15T12:27:15","nf_0km":"2026-05-30T16:00:00","nf_seminovo":"2026-06-11T09:40:00"},{"proposta":"26232","seminovo":"SIM","vendedor":"MARCIO PADULA","unidade":"Mário Tourinho","abertura":"2026-06-19T00:00:00","aprovacao":"2026-06-22T15:40:00","criacao_fluxo":"2026-06-24T17:13:00","envio_fluxo_fat":"2026-06-25T09:57:00","revisao_fat":null,"envio_fluxo_entrada":"2026-06-25T11:35:00","revisao_entrada":null,"checagem_desp":"2026-06-25T12:05:00","emplacamento":null,"nf_0km":"2026-06-25T15:22:00","nf_seminovo":null},{"proposta":"26222","seminovo":"NAO","vendedor":"JHESYKA PLATNER CAMARA","unidade":"Mário Tourinho","abertura":"2026-06-18T00:00:00","aprovacao":"2026-06-19T08:30:00","criacao_fluxo":"2026-06-19T08:58:00","envio_fluxo_fat":"2026-06-19T09:33:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-06-22T14:29:25","nf_0km":"2026-06-19T09:53:00","nf_seminovo":null},{"proposta":"26101","seminovo":"SIM","vendedor":"REINALDO MARCELO NOVATZKI","unidade":"Mário Tourinho","abertura":"2026-06-06T00:00:00","aprovacao":"2026-06-08T11:30:00","criacao_fluxo":"2026-06-08T15:23:00","envio_fluxo_fat":"2026-06-08T15:27:00","revisao_fat":null,"envio_fluxo_entrada":"2026-06-08T15:49:00","revisao_entrada":null,"checagem_desp":"2026-06-09T23:43:00","emplacamento":"2026-06-15T21:34:53","nf_0km":"2026-06-10T09:12:00","nf_seminovo":"2026-06-12T09:43:00"},{"proposta":"26010","seminovo":"SIM","vendedor":"KEILA CRISTINA KUREK DE LIMA","unidade":"Mário Tourinho","abertura":"2026-05-29T00:00:00","aprovacao":"2026-05-30T10:19:00","criacao_fluxo":"2026-05-30T10:25:00","envio_fluxo_fat":"2026-05-30T10:30:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-05-30T18:25:00","nf_seminovo":null},{"proposta":"26079","seminovo":"SIM","vendedor":"KEILA CRISTINA KUREK DE LIMA","unidade":"Mário Tourinho","abertura":"2026-06-03T00:00:00","aprovacao":"2026-06-05T13:45:00","criacao_fluxo":"2026-06-05T13:54:00","envio_fluxo_fat":"2026-06-05T14:16:00","revisao_fat":"2026-06-08T15:42:00","envio_fluxo_entrada":"2026-06-06T11:29:00","revisao_entrada":null,"checagem_desp":"2026-06-08T12:41:00","emplacamento":"2026-06-11T00:26:15","nf_0km":"2026-06-08T15:48:00","nf_seminovo":"2026-06-17T10:06:00"},{"proposta":"26188","seminovo":"SIM","vendedor":"PRISCILLA STEPHANI FIGUEIREDO","unidade":"Mário Tourinho","abertura":"2026-06-15T00:00:00","aprovacao":"2026-06-16T13:31:00","criacao_fluxo":"2026-06-16T13:47:00","envio_fluxo_fat":"2026-06-16T14:00:00","revisao_fat":"2026-06-17T14:18:00","envio_fluxo_entrada":"2026-06-16T14:12:00","revisao_entrada":null,"checagem_desp":"2026-06-17T12:29:00","emplacamento":"2026-06-18T21:15:57","nf_0km":"2026-06-17T14:35:00","nf_seminovo":"2026-06-23T13:25:00"},{"proposta":"26036","seminovo":"SIM","vendedor":"KEILA CRISTINA KUREK DE LIMA","unidade":"Mário Tourinho","abertura":"2026-05-30T00:00:00","aprovacao":"2026-05-30T17:56:00","criacao_fluxo":"2026-05-29T18:43:00","envio_fluxo_fat":"2026-05-30T18:38:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-06-22T21:23:38","nf_0km":"2026-06-08T17:50:00","nf_seminovo":null},{"proposta":"26158","seminovo":"SIM","vendedor":"GUILHERME SPADACCINO","unidade":"Mário Tourinho","abertura":"2026-06-12T00:00:00","aprovacao":"2026-06-15T11:10:00","criacao_fluxo":"2026-06-15T11:21:00","envio_fluxo_fat":"2026-06-15T11:36:00","revisao_fat":null,"envio_fluxo_entrada":"2026-06-15T15:23:00","revisao_entrada":null,"checagem_desp":"2026-06-15T16:37:00","emplacamento":"2026-06-22T20:39:37","nf_0km":"2026-06-16T08:35:00","nf_seminovo":"2026-06-22T10:06:00"},{"proposta":"26118","seminovo":"SIM","vendedor":"PRISCILLA STEPHANI FIGUEIREDO","unidade":"Mário Tourinho","abertura":"2026-06-09T00:00:00","aprovacao":"2026-06-19T14:25:00","criacao_fluxo":"2026-06-19T14:29:00","envio_fluxo_fat":"2026-06-19T14:32:00","revisao_fat":null,"envio_fluxo_entrada":"2026-06-19T14:45:00","revisao_entrada":null,"checagem_desp":"2026-06-22T10:19:00","emplacamento":"2026-06-23T20:48:23","nf_0km":"2026-06-22T13:42:00","nf_seminovo":"2026-06-25T10:41:00"},{"proposta":"25438","seminovo":"NAO","vendedor":"SIDNEY GONCALVES DOS SANTOS","unidade":"Mário Tourinho","abertura":"2026-04-11T00:00:00","aprovacao":"2026-05-29T10:49:00","criacao_fluxo":"2026-05-29T12:21:00","envio_fluxo_fat":"2026-05-29T12:36:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-05-30T19:05:07","nf_0km":"2026-05-29T16:18:00","nf_seminovo":null},{"proposta":"26017","seminovo":"SIM","vendedor":"GUILHERME SPADACCINO","unidade":"Mário Tourinho","abertura":"2026-05-30T00:00:00","aprovacao":"2026-06-08T12:47:00","criacao_fluxo":"2026-06-08T12:07:00","envio_fluxo_fat":"2026-06-08T12:49:00","revisao_fat":null,"envio_fluxo_entrada":"2026-06-08T13:10:00","revisao_entrada":null,"checagem_desp":"2026-06-09T23:37:00","emplacamento":"2026-06-16T22:07:00","nf_0km":"2026-06-10T17:03:00","nf_seminovo":"2026-06-17T18:08:00"},{"proposta":"26020","seminovo":"SIM","vendedor":"MARCIO PADULA","unidade":"Mário Tourinho","abertura":"2026-05-30T00:00:00","aprovacao":"2026-05-30T15:44:00","criacao_fluxo":"2026-05-30T15:57:00","envio_fluxo_fat":"2026-05-30T16:03:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-06-21T01:00:51","nf_0km":"2026-06-01T13:37:00","nf_seminovo":null},{"proposta":"25736","seminovo":"SIM","vendedor":"PATRICK EDERSON DA SILVA","unidade":"Mário Tourinho","abertura":"2026-05-09T00:00:00","aprovacao":"2026-05-11T12:48:00","criacao_fluxo":"2026-05-11T13:39:00","envio_fluxo_fat":"2026-05-11T13:42:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-05-30T20:08:02","nf_0km":"2026-05-12T11:09:00","nf_seminovo":null},{"proposta":"24994","seminovo":"NAO","vendedor":"JACSON DURAES SANTOS","unidade":"Mário Tourinho","abertura":"2026-03-03T00:00:00","aprovacao":"2026-03-05T14:37:00","criacao_fluxo":"2026-03-05T14:59:00","envio_fluxo_fat":"2026-03-05T15:03:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-03-05T15:15:00","nf_seminovo":null},{"proposta":"25360","seminovo":"NAO","vendedor":"MAURICIO TALISIN","unidade":"Mário Tourinho","abertura":"2026-04-04T00:00:00","aprovacao":"2026-04-07T10:26:00","criacao_fluxo":"2026-03-31T14:19:00","envio_fluxo_fat":"2026-04-07T15:16:00","revisao_fat":"2026-04-08T14:13:00","envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-04-08T14:27:00","nf_seminovo":null},{"proposta":"25818","seminovo":"NAO","vendedor":"JACSON DURAES SANTOS","unidade":"Mário Tourinho","abertura":"2026-05-15T00:00:00","aprovacao":"2026-05-18T10:23:00","criacao_fluxo":"2026-05-18T10:56:00","envio_fluxo_fat":"2026-05-18T11:06:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-05-18T11:50:00","nf_seminovo":null},{"proposta":"25316","seminovo":"SIM","vendedor":"PRISCILLA STEPHANI FIGUEIREDO","unidade":"Mário Tourinho","abertura":"2026-03-31T00:00:00","aprovacao":"2026-03-31T16:34:00","criacao_fluxo":"2026-03-31T15:49:00","envio_fluxo_fat":"2026-03-31T16:04:00","revisao_fat":"2026-03-31T16:36:00","envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-03-31T16:57:00","nf_seminovo":null},{"proposta":"25802","seminovo":"NAO","vendedor":"PATRICK EDERSON DA SILVA","unidade":"Mário Tourinho","abertura":"2026-05-14T00:00:00","aprovacao":"2026-05-18T11:53:00","criacao_fluxo":"2026-05-18T11:55:00","envio_fluxo_fat":"2026-05-18T12:01:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-05-18T12:31:00","nf_seminovo":null},{"proposta":"25094","seminovo":"NAO","vendedor":"PATRICK EDERSON DA SILVA","unidade":"Mário Tourinho","abertura":"2026-03-12T00:00:00","aprovacao":"2026-03-20T11:17:00","criacao_fluxo":"2026-03-20T11:23:00","envio_fluxo_fat":"2026-03-20T11:25:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-03-20T14:37:00","nf_seminovo":null},{"proposta":"25725","seminovo":"SIM","vendedor":"JACSON DURAES SANTOS","unidade":"Mário Tourinho","abertura":"2026-05-08T00:00:00","aprovacao":"2026-05-11T11:57:00","criacao_fluxo":"2026-05-11T12:16:00","envio_fluxo_fat":"2026-05-11T12:21:00","revisao_fat":null,"envio_fluxo_entrada":"2026-05-11T12:59:00","revisao_entrada":null,"checagem_desp":"2026-05-11T15:49:00","emplacamento":null,"nf_0km":"2026-05-12T11:33:00","nf_seminovo":"2026-06-03T11:57:00"},{"proposta":"26220","seminovo":"SIM","vendedor":"PRISCILLA STEPHANI FIGUEIREDO","unidade":"Mário Tourinho","abertura":"2026-06-18T00:00:00","aprovacao":"2026-06-19T14:10:00","criacao_fluxo":"2026-06-19T14:17:00","envio_fluxo_fat":"2026-06-19T14:23:00","revisao_fat":null,"envio_fluxo_entrada":"2026-06-19T14:36:00","revisao_entrada":null,"checagem_desp":"2026-06-19T17:32:00","emplacamento":"2026-06-23T20:48:58","nf_0km":"2026-06-22T11:37:00","nf_seminovo":"2026-06-25T15:31:00"},{"proposta":"26224","seminovo":"SIM","vendedor":"MARCIO PADULA","unidade":"Mário Tourinho","abertura":"2026-06-18T00:00:00","aprovacao":"2026-06-23T10:57:00","criacao_fluxo":"2026-06-23T11:01:00","envio_fluxo_fat":"2026-06-23T11:16:00","revisao_fat":"2026-06-24T11:18:00","envio_fluxo_entrada":"2026-06-23T11:50:00","revisao_entrada":null,"checagem_desp":"2026-06-23T15:35:00","emplacamento":null,"nf_0km":"2026-06-24T13:11:00","nf_seminovo":null},{"proposta":"26233","seminovo":"SIM","vendedor":"SIDNEY GONCALVES DOS SANTOS","unidade":"Mário Tourinho","abertura":"2026-06-20T00:00:00","aprovacao":"2026-06-23T15:58:00","criacao_fluxo":"2026-06-23T16:22:00","envio_fluxo_fat":"2026-06-23T16:38:00","revisao_fat":null,"envio_fluxo_entrada":"2026-06-23T17:20:00","revisao_entrada":"2026-06-24T10:37:00","checagem_desp":"2026-06-24T09:43:00","emplacamento":null,"nf_0km":"2026-06-24T14:11:00","nf_seminovo":null},{"proposta":"25976","seminovo":"SIM","vendedor":"GUILHERME SPADACCINO","unidade":"Mário Tourinho","abertura":"2026-05-27T00:00:00","aprovacao":"2026-05-28T11:50:00","criacao_fluxo":"2026-05-28T12:02:00","envio_fluxo_fat":"2026-05-28T14:57:00","revisao_fat":null,"envio_fluxo_entrada":"2026-05-28T15:22:00","revisao_entrada":null,"checagem_desp":"2026-05-28T16:52:00","emplacamento":"2026-05-30T19:05:44","nf_0km":"2026-05-29T13:10:00","nf_seminovo":"2026-06-11T10:53:00"},{"proposta":"26151","seminovo":"NAO","vendedor":"SIDNEY GONCALVES DOS SANTOS","unidade":"Mário Tourinho","abertura":"2026-06-12T00:00:00","aprovacao":"2026-06-15T10:59:00","criacao_fluxo":"2026-06-15T10:39:00","envio_fluxo_fat":"2026-06-15T11:20:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-06-15T22:10:44","nf_0km":"2026-06-15T12:15:00","nf_seminovo":null},{"proposta":"26242","seminovo":"NAO","vendedor":"SIDNEY GONCALVES DOS SANTOS","unidade":"Mário Tourinho","abertura":"2026-06-22T00:00:00","aprovacao":"2026-06-23T13:22:00","criacao_fluxo":"2026-06-23T13:39:00","envio_fluxo_fat":"2026-06-23T13:50:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-23T14:31:00","nf_seminovo":null},{"proposta":"25260","seminovo":"SIM","vendedor":"SIDNEY GONCALVES DOS SANTOS","unidade":"Mário Tourinho","abertura":"2026-03-27T00:00:00","aprovacao":"2026-03-31T15:42:00","criacao_fluxo":"2026-03-31T16:01:00","envio_fluxo_fat":"2026-03-31T16:09:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-03-31T16:20:00","nf_seminovo":null},{"proposta":"26137","seminovo":"NAO","vendedor":"KEILA CRISTINA KUREK DE LIMA","unidade":"Mário Tourinho","abertura":"2026-06-11T00:00:00","aprovacao":"2026-06-12T14:11:00","criacao_fluxo":"2026-06-12T14:35:00","envio_fluxo_fat":"2026-06-12T14:56:00","revisao_fat":"2026-06-12T16:00:00","envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-06-17T12:54:30","nf_0km":"2026-06-12T16:33:00","nf_seminovo":null},{"proposta":"25241","seminovo":"SIM","vendedor":"PRISCILLA STEPHANI FIGUEIREDO","unidade":"Mário Tourinho","abertura":"2026-03-26T00:00:00","aprovacao":"2026-05-14T16:12:00","criacao_fluxo":"2026-05-14T16:15:00","envio_fluxo_fat":"2026-05-14T16:23:00","revisao_fat":null,"envio_fluxo_entrada":"2026-05-15T11:16:00","revisao_entrada":null,"checagem_desp":"2026-05-15T12:25:00","emplacamento":"2026-05-25T19:58:23","nf_0km":"2026-05-14T16:54:00","nf_seminovo":"2026-05-29T10:16:00"},{"proposta":"25188","seminovo":"NAO","vendedor":"REINALDO MARCELO NOVATZKI","unidade":"Mário Tourinho","abertura":"2026-03-21T00:00:00","aprovacao":"2026-03-30T10:29:00","criacao_fluxo":"2026-03-30T11:18:00","envio_fluxo_fat":"2026-03-30T11:23:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-03-30T12:09:00","nf_seminovo":null},{"proposta":"25258","seminovo":"SIM","vendedor":"JACSON DURAES SANTOS","unidade":"Mário Tourinho","abertura":"2026-03-27T00:00:00","aprovacao":"2026-03-30T11:53:00","criacao_fluxo":"2026-03-30T11:59:00","envio_fluxo_fat":"2026-03-30T12:03:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-03-30T17:26:00","nf_seminovo":null},{"proposta":"26235","seminovo":"SIM","vendedor":"FRANCISCO AZEVEDO PEREIRA JUNIOR","unidade":"Mário Tourinho","abertura":"2026-06-20T00:00:00","aprovacao":"2026-06-22T15:41:00","criacao_fluxo":"2026-06-22T15:55:00","envio_fluxo_fat":"2026-06-22T16:05:00","revisao_fat":null,"envio_fluxo_entrada":"2026-06-22T17:39:00","revisao_entrada":null,"checagem_desp":"2026-06-23T10:24:00","emplacamento":null,"nf_0km":"2026-06-23T15:24:00","nf_seminovo":null},{"proposta":"26169","seminovo":"NAO","vendedor":"SIDNEY GONCALVES DOS SANTOS","unidade":"Mário Tourinho","abertura":"2026-06-13T00:00:00","aprovacao":"2026-06-16T10:41:00","criacao_fluxo":"2026-06-16T17:27:00","envio_fluxo_fat":"2026-06-16T17:40:00","revisao_fat":"2026-06-17T14:17:00","envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-06-22T09:54:37","nf_0km":"2026-06-17T14:56:00","nf_seminovo":null},{"proposta":"25860","seminovo":"SIM","vendedor":"REINALDO MARCELO NOVATZKI","unidade":"Mário Tourinho","abertura":"2026-05-18T00:00:00","aprovacao":"2026-05-19T14:53:00","criacao_fluxo":"2026-05-18T18:43:00","envio_fluxo_fat":"2026-05-19T14:07:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-05-22T21:11:16","nf_0km":"2026-05-19T17:31:00","nf_seminovo":null},{"proposta":"25283","seminovo":"NAO","vendedor":"PATRICK EDERSON DA SILVA","unidade":"Mário Tourinho","abertura":"2026-03-28T00:00:00","aprovacao":"2026-05-15T15:34:00","criacao_fluxo":"2026-05-15T15:41:00","envio_fluxo_fat":"2026-05-15T15:43:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-05-25T19:49:41","nf_0km":"2026-05-15T15:56:00","nf_seminovo":null},{"proposta":"26231","seminovo":"SIM","vendedor":"PRISCILLA STEPHANI FIGUEIREDO","unidade":"Mário Tourinho","abertura":"2026-06-19T00:00:00","aprovacao":"2026-06-23T11:16:00","criacao_fluxo":"2026-06-23T11:20:00","envio_fluxo_fat":"2026-06-23T11:24:00","revisao_fat":null,"envio_fluxo_entrada":"2026-06-23T11:36:00","revisao_entrada":null,"checagem_desp":"2026-06-23T15:57:00","emplacamento":null,"nf_0km":"2026-06-24T10:38:00","nf_seminovo":null},{"proposta":"26167","seminovo":"SIM","vendedor":"SIDNEY GONCALVES DOS SANTOS","unidade":"Mário Tourinho","abertura":"2026-06-13T00:00:00","aprovacao":"2026-06-18T11:37:00","criacao_fluxo":"2026-06-18T11:12:00","envio_fluxo_fat":"2026-06-18T11:45:00","revisao_fat":null,"envio_fluxo_entrada":"2026-06-18T13:29:00","revisao_entrada":"2026-06-18T15:17:00","checagem_desp":"2026-06-18T14:26:00","emplacamento":null,"nf_0km":"2026-06-18T15:46:00","nf_seminovo":"2026-06-19T09:17:00"},{"proposta":"25875","seminovo":"SIM","vendedor":"MAURICIO TALISIN","unidade":"Mário Tourinho","abertura":"2026-05-20T00:00:00","aprovacao":"2026-05-28T15:40:00","criacao_fluxo":"2026-05-28T15:49:00","envio_fluxo_fat":"2026-05-28T15:57:00","revisao_fat":"2026-05-30T16:19:00","envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-05-30T16:32:00","nf_seminovo":null},{"proposta":"26227","seminovo":"NAO","vendedor":"REINALDO MARCELO NOVATZKI","unidade":"Mário Tourinho","abertura":"2026-06-19T00:00:00","aprovacao":"2026-06-22T09:00:00","criacao_fluxo":"2026-06-22T08:31:00","envio_fluxo_fat":"2026-06-22T12:48:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-22T13:08:00","nf_seminovo":null},{"proposta":"26183","seminovo":"NAO","vendedor":"KEILA CRISTINA KUREK DE LIMA","unidade":"Mário Tourinho","abertura":"2026-06-15T00:00:00","aprovacao":"2026-06-16T17:23:00","criacao_fluxo":"2026-06-16T17:16:00","envio_fluxo_fat":"2026-06-16T17:25:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-06-17T23:45:42","nf_0km":"2026-06-16T17:47:00","nf_seminovo":null},{"proposta":"94073","seminovo":"SIM","vendedor":"EDUARDO PEREIRA DE OLIVEIRA","unidade":"Matriz","abertura":"2026-06-19T00:00:00","aprovacao":"2026-06-23T11:07:00","criacao_fluxo":"2026-06-23T10:47:00","envio_fluxo_fat":"2026-06-23T11:17:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-23T11:25:00","nf_seminovo":null},{"proposta":"94232","seminovo":"NAO","vendedor":"FABIANO JOSE DOS SANTOS BELOTO","unidade":"Matriz","abertura":"2026-06-24T00:00:00","aprovacao":"2026-06-25T09:18:00","criacao_fluxo":"2026-06-25T09:20:00","envio_fluxo_fat":"2026-06-25T09:30:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-25T09:42:00","nf_seminovo":null},{"proposta":"93874","seminovo":"NAO","vendedor":"JOSINEI ANTONIO MOREIRA","unidade":"Matriz","abertura":"2026-06-12T00:00:00","aprovacao":"2026-06-16T16:15:00","criacao_fluxo":"2026-06-16T16:26:00","envio_fluxo_fat":"2026-06-16T16:35:00","revisao_fat":"2026-06-16T17:50:00","envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-06-23T08:15:18","nf_0km":"2026-06-16T17:55:00","nf_seminovo":null},{"proposta":"93884","seminovo":"NAO","vendedor":"RITA DE CACIA DE CARVALHO","unidade":"Matriz","abertura":"2026-06-13T00:00:00","aprovacao":"2026-06-23T14:42:00","criacao_fluxo":"2026-06-23T10:07:00","envio_fluxo_fat":"2026-06-23T11:34:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-23T15:29:00","nf_seminovo":null},{"proposta":"93887","seminovo":"SIM","vendedor":"BRUCE LEE YOCHIME SOUZA HIRATA","unidade":"Matriz","abertura":"2026-06-13T00:00:00","aprovacao":"2026-06-15T16:30:00","criacao_fluxo":"2026-06-15T16:16:00","envio_fluxo_fat":"2026-06-15T16:39:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-06-18T21:04:51","nf_0km":"2026-06-15T17:20:00","nf_seminovo":null},{"proposta":"94094","seminovo":"NAO","vendedor":"EDUARDO PEREIRA DE OLIVEIRA","unidade":"Matriz","abertura":"2026-06-20T00:00:00","aprovacao":"2026-06-23T16:06:00","criacao_fluxo":"2026-06-23T15:38:00","envio_fluxo_fat":"2026-06-23T16:19:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-24T08:26:00","nf_seminovo":null},{"proposta":"93800","seminovo":"NAO","vendedor":"FABIANO JOSE DOS SANTOS BELOTO","unidade":"Matriz","abertura":"2026-06-10T00:00:00","aprovacao":"2026-06-11T11:08:00","criacao_fluxo":"2026-06-11T10:59:00","envio_fluxo_fat":"2026-06-11T11:17:00","revisao_fat":"2026-06-12T09:25:00","envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-06-22T20:46:50","nf_0km":"2026-06-12T09:41:00","nf_seminovo":null},{"proposta":"93954","seminovo":"SIM","vendedor":"RAMON VALERIO OLIVEIRA","unidade":"Matriz","abertura":"2026-06-16T00:00:00","aprovacao":"2026-06-17T11:05:00","criacao_fluxo":"2026-06-17T11:07:00","envio_fluxo_fat":"2026-06-17T11:23:00","revisao_fat":null,"envio_fluxo_entrada":"2026-06-19T18:22:00","revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-06-18T12:18:03","nf_0km":"2026-06-17T12:27:00","nf_seminovo":"2026-06-22T09:48:00"},{"proposta":"93882","seminovo":"NAO","vendedor":"DIOGO MARCEL CORBARI","unidade":"Matriz","abertura":"2026-06-13T00:00:00","aprovacao":"2026-06-23T13:21:00","criacao_fluxo":"2026-06-18T10:59:00","envio_fluxo_fat":"2026-06-23T13:28:00","revisao_fat":"2026-06-23T15:30:00","envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-23T15:49:00","nf_seminovo":null},{"proposta":"93749","seminovo":"SIM","vendedor":"JOSINEI ANTONIO MOREIRA","unidade":"Matriz","abertura":"2026-06-08T00:00:00","aprovacao":"2026-06-10T10:49:00","criacao_fluxo":"2026-06-10T10:53:00","envio_fluxo_fat":"2026-06-10T11:08:00","revisao_fat":null,"envio_fluxo_entrada":"2026-06-15T12:55:00","revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-10T11:22:00","nf_seminovo":"2026-06-16T15:41:00"},{"proposta":"93035","seminovo":"SIM","vendedor":"LORIANE CRISTINE DA MOTA CABRAL","unidade":"Matriz","abertura":"2026-05-12T00:00:00","aprovacao":"2026-05-13T10:33:00","criacao_fluxo":"2026-05-13T10:27:00","envio_fluxo_fat":"2026-05-13T10:49:00","revisao_fat":"2026-05-13T12:54:00","envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-05-22T20:42:18","nf_0km":"2026-05-13T13:22:00","nf_seminovo":null},{"proposta":"94153","seminovo":"NAO","vendedor":"ZULMAR JOSE MULLER JUNIOR","unidade":"Matriz","abertura":"2026-06-23T00:00:00","aprovacao":"2026-06-24T15:54:00","criacao_fluxo":"2026-06-24T16:00:00","envio_fluxo_fat":"2026-06-24T16:03:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-24T16:34:00","nf_seminovo":null},{"proposta":"94177","seminovo":"SIM","vendedor":"BRUCE LEE YOCHIME SOUZA HIRATA","unidade":"Matriz","abertura":"2026-06-23T00:00:00","aprovacao":"2026-06-24T13:13:00","criacao_fluxo":"2026-06-24T13:27:00","envio_fluxo_fat":"2026-06-24T14:27:00","revisao_fat":"2026-06-24T14:58:00","envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-24T15:01:00","nf_seminovo":null},{"proposta":"93399","seminovo":"NAO","vendedor":"DIOGO MARCEL CORBARI","unidade":"Matriz","abertura":"2026-05-25T00:00:00","aprovacao":"2026-05-25T16:24:00","criacao_fluxo":"2026-05-25T17:18:00","envio_fluxo_fat":"2026-05-25T17:26:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-05-25T18:58:00","nf_seminovo":null},{"proposta":"93336","seminovo":"NAO","vendedor":"FABIANO JOSE DOS SANTOS BELOTO","unidade":"Matriz","abertura":"2026-05-22T00:00:00","aprovacao":"2026-05-29T11:11:00","criacao_fluxo":"2026-05-29T13:18:00","envio_fluxo_fat":"2026-05-29T13:41:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-05-29T16:01:00","nf_seminovo":null},{"proposta":"92421","seminovo":"NAO","vendedor":"ZULMAR JOSE MULLER JUNIOR","unidade":"Matriz","abertura":"2026-04-22T00:00:00","aprovacao":"2026-04-24T16:08:00","criacao_fluxo":"2026-04-24T16:22:00","envio_fluxo_fat":"2026-04-24T16:25:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-04-24T16:56:00","nf_seminovo":null},{"proposta":"92974","seminovo":"SIM","vendedor":"DIOGO MARCEL CORBARI","unidade":"Matriz","abertura":"2026-05-08T00:00:00","aprovacao":"2026-05-12T11:48:00","criacao_fluxo":"2026-05-12T11:50:00","envio_fluxo_fat":"2026-05-12T11:55:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-05-12T15:50:00","nf_seminovo":null},{"proposta":"93481","seminovo":"NAO","vendedor":"JOSINEI ANTONIO MOREIRA","unidade":"Matriz","abertura":"2026-05-28T00:00:00","aprovacao":"2026-05-29T13:32:00","criacao_fluxo":"2026-05-29T17:04:00","envio_fluxo_fat":"2026-05-29T17:09:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-05-29T18:07:00","nf_seminovo":null},{"proposta":"92781","seminovo":"SIM","vendedor":"ADRIANO DOMINGOS NOGUEIRA","unidade":"Matriz","abertura":"2026-05-05T00:00:00","aprovacao":"2026-06-22T16:03:00","criacao_fluxo":"2026-06-22T14:25:00","envio_fluxo_fat":"2026-06-22T16:14:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-22T17:20:00","nf_seminovo":null},{"proposta":"92785","seminovo":"NAO","vendedor":"FABIANO JOSE DOS SANTOS BELOTO","unidade":"Matriz","abertura":"2026-05-05T00:00:00","aprovacao":"2026-05-06T08:39:00","criacao_fluxo":"2026-05-06T10:59:00","envio_fluxo_fat":"2026-05-06T11:05:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-05-06T13:01:00","nf_seminovo":null},{"proposta":"93509","seminovo":"NAO","vendedor":"ZULMAR JOSE MULLER JUNIOR","unidade":"Matriz","abertura":"2026-05-29T00:00:00","aprovacao":"2026-05-29T12:08:00","criacao_fluxo":"2026-05-29T14:22:00","envio_fluxo_fat":"2026-05-29T14:25:00","revisao_fat":"2026-05-29T16:23:00","envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-05-29T17:42:00","nf_seminovo":null},{"proposta":"93991","seminovo":"NAO","vendedor":"FABIANO JOSE DOS SANTOS BELOTO","unidade":"Matriz","abertura":"2026-06-17T00:00:00","aprovacao":"2026-06-18T08:26:00","criacao_fluxo":"2026-06-18T08:35:00","envio_fluxo_fat":"2026-06-18T09:57:00","revisao_fat":"2026-06-18T10:39:00","envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-06-22T20:38:45","nf_0km":"2026-06-18T10:56:00","nf_seminovo":null},{"proposta":"94150","seminovo":"SIM","vendedor":"DIOGO MARCEL CORBARI","unidade":"Matriz","abertura":"2026-06-23T00:00:00","aprovacao":"2026-06-24T14:51:00","criacao_fluxo":"2026-06-24T14:58:00","envio_fluxo_fat":"2026-06-24T15:03:00","revisao_fat":"2026-06-24T16:02:00","envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-24T17:23:00","nf_seminovo":null},{"proposta":"94126","seminovo":"SIM","vendedor":"BRUCE LEE YOCHIME SOUZA HIRATA","unidade":"Matriz","abertura":"2026-06-22T00:00:00","aprovacao":"2026-06-22T17:54:00","criacao_fluxo":"2026-06-23T09:55:00","envio_fluxo_fat":"2026-06-23T10:08:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-23T10:26:00","nf_seminovo":null},{"proposta":"93836","seminovo":"SIM","vendedor":"LORIANE CRISTINE DA MOTA CABRAL NEVES","unidade":"Matriz","abertura":"2026-06-11T00:00:00","aprovacao":"2026-06-15T11:14:00","criacao_fluxo":"2026-06-15T11:19:00","envio_fluxo_fat":"2026-06-15T11:22:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-06-23T20:43:58","nf_0km":"2026-06-15T11:41:00","nf_seminovo":null},{"proposta":"94081","seminovo":"SIM","vendedor":"IGOR HENRIQUE TEODORO","unidade":"Matriz","abertura":"2026-06-19T00:00:00","aprovacao":"2026-06-22T11:45:00","criacao_fluxo":"2026-06-22T09:57:00","envio_fluxo_fat":"2026-06-22T11:48:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-06-24T16:17:55","nf_0km":"2026-06-22T13:13:00","nf_seminovo":null},{"proposta":"93589","seminovo":"SIM","vendedor":"FABIANO JOSE DOS SANTOS BELOTO","unidade":"Matriz","abertura":"2026-06-01T00:00:00","aprovacao":"2026-06-03T09:16:00","criacao_fluxo":"2026-06-03T09:16:00","envio_fluxo_fat":"2026-06-03T10:06:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-03T10:24:00","nf_seminovo":null},{"proposta":"92125","seminovo":"SIM","vendedor":"RITA DE CACIA DE CARVALHO","unidade":"Matriz","abertura":"2026-04-10T00:00:00","aprovacao":"2026-06-24T15:43:00","criacao_fluxo":"2026-06-24T12:29:00","envio_fluxo_fat":"2026-06-24T15:58:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-24T16:17:00","nf_seminovo":null},{"proposta":"94082","seminovo":"SIM","vendedor":"JOSINEI ANTONIO MOREIRA","unidade":"Matriz","abertura":"2026-06-20T00:00:00","aprovacao":"2026-06-22T16:18:00","criacao_fluxo":"2026-06-22T16:55:00","envio_fluxo_fat":"2026-06-22T17:01:00","revisao_fat":"2026-06-22T17:51:00","envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-22T18:17:00","nf_seminovo":null},{"proposta":"94095","seminovo":"SIM","vendedor":"JOSINEI ANTONIO MOREIRA","unidade":"Matriz","abertura":"2026-06-20T00:00:00","aprovacao":"2026-06-23T15:13:00","criacao_fluxo":"2026-06-23T15:23:00","envio_fluxo_fat":"2026-06-23T15:26:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-23T17:31:00","nf_seminovo":null},{"proposta":"91525","seminovo":"NAO","vendedor":"ZULMAR JOSE MULLER JUNIOR","unidade":"Matriz","abertura":"2026-03-20T00:00:00","aprovacao":"2026-03-23T15:42:00","criacao_fluxo":"2026-03-23T15:43:00","envio_fluxo_fat":"2026-03-23T15:55:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-03-24T09:02:00","nf_seminovo":null},{"proposta":"91958","seminovo":"NAO","vendedor":"ZULMAR JOSE MULLER JUNIOR","unidade":"Matriz","abertura":"2026-04-04T00:00:00","aprovacao":"2026-05-25T14:58:00","criacao_fluxo":"2026-05-25T15:40:00","envio_fluxo_fat":"2026-05-25T16:32:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-06-03T00:11:55","nf_0km":"2026-05-25T17:23:00","nf_seminovo":null},{"proposta":"94114","seminovo":"SIM","vendedor":"RITA DE CACIA DE CARVALHO","unidade":"Matriz","abertura":"2026-06-22T00:00:00","aprovacao":"2026-06-23T17:14:00","criacao_fluxo":"2026-06-23T17:22:00","envio_fluxo_fat":"2026-06-23T17:32:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-23T18:04:00","nf_seminovo":null},{"proposta":"93898","seminovo":"SIM","vendedor":"JOSINEI ANTONIO MOREIRA","unidade":"Matriz","abertura":"2026-06-13T00:00:00","aprovacao":"2026-06-16T17:39:00","criacao_fluxo":"2026-06-16T17:40:00","envio_fluxo_fat":"2026-06-16T17:47:00","revisao_fat":"2026-06-17T09:32:00","envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-06-18T21:08:13","nf_0km":"2026-06-17T09:42:00","nf_seminovo":null},{"proposta":"94174","seminovo":"SIM","vendedor":"LORIANE CRISTINE DA MOTA CABRAL","unidade":"Matriz","abertura":"2026-06-23T00:00:00","aprovacao":"2026-06-24T17:10:00","criacao_fluxo":"2026-06-24T14:47:00","envio_fluxo_fat":"2026-06-24T17:16:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-24T17:35:00","nf_seminovo":null},{"proposta":"94093","seminovo":"SIM","vendedor":"STEFANY MEIRELES MOHR","unidade":"Matriz","abertura":"2026-06-20T00:00:00","aprovacao":"2026-06-22T17:13:00","criacao_fluxo":"2026-06-22T16:28:00","envio_fluxo_fat":"2026-06-22T17:16:00","revisao_fat":"2026-06-23T14:31:00","envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-23T15:58:00","nf_seminovo":null},{"proposta":"94086","seminovo":"SIM","vendedor":"LORIANE CRISTINE DA MOTA CABRAL NEVES","unidade":"Matriz","abertura":"2026-06-20T00:00:00","aprovacao":"2026-06-22T11:59:00","criacao_fluxo":"2026-06-22T12:10:00","envio_fluxo_fat":"2026-06-22T12:16:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-06-23T20:43:26","nf_0km":"2026-06-22T13:34:00","nf_seminovo":null},{"proposta":"94096","seminovo":"SIM","vendedor":"STEFANY MEIRELES MOHR","unidade":"Matriz","abertura":"2026-06-20T00:00:00","aprovacao":"2026-06-23T16:28:00","criacao_fluxo":"2026-06-23T14:57:00","envio_fluxo_fat":"2026-06-23T16:49:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-24T09:07:00","nf_seminovo":null},{"proposta":"93970","seminovo":"NAO","vendedor":"JOSINEI ANTONIO MOREIRA","unidade":"Matriz","abertura":"2026-06-16T00:00:00","aprovacao":"2026-06-17T14:43:00","criacao_fluxo":"2026-06-17T14:49:00","envio_fluxo_fat":"2026-06-17T14:53:00","revisao_fat":"2026-06-17T16:07:00","envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-06-18T21:07:48","nf_0km":"2026-06-17T16:22:00","nf_seminovo":null},{"proposta":"92153","seminovo":"NAO","vendedor":"RAMON VALERIO OLIVEIRA","unidade":"Matriz","abertura":"2026-04-11T00:00:00","aprovacao":"2026-04-13T10:30:00","criacao_fluxo":"2026-04-13T10:10:00","envio_fluxo_fat":"2026-04-13T10:32:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-04-13T13:49:00","nf_seminovo":null},{"proposta":"92976","seminovo":"SIM","vendedor":"LORIANE CRISTINE DA MOTA CABRAL","unidade":"Matriz","abertura":"2026-05-08T00:00:00","aprovacao":"2026-05-11T11:58:00","criacao_fluxo":"2026-05-11T13:43:00","envio_fluxo_fat":"2026-05-11T13:59:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-05-30T19:59:37","nf_0km":"2026-05-11T15:01:00","nf_seminovo":null},{"proposta":"93711","seminovo":"NAO","vendedor":"RAMON VALERIO OLIVEIRA","unidade":"Matriz","abertura":"2026-06-06T00:00:00","aprovacao":"2026-06-25T11:13:00","criacao_fluxo":"2026-06-25T11:20:00","envio_fluxo_fat":"2026-06-25T11:23:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-25T12:21:00","nf_seminovo":null},{"proposta":"94092","seminovo":"SIM","vendedor":"ZULMAR JOSE MULLER JUNIOR","unidade":"Matriz","abertura":"2026-06-20T00:00:00","aprovacao":"2026-06-23T16:12:00","criacao_fluxo":"2026-06-23T16:18:00","envio_fluxo_fat":"2026-06-23T16:20:00","revisao_fat":"2026-06-24T08:59:00","envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-24T13:20:00","nf_seminovo":null},{"proposta":"94097","seminovo":"SIM","vendedor":"RITA DE CACIA DE CARVALHO","unidade":"Matriz","abertura":"2026-06-20T00:00:00","aprovacao":"2026-06-23T14:52:00","criacao_fluxo":"2026-06-23T14:57:00","envio_fluxo_fat":"2026-06-23T15:01:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-23T17:23:00","nf_seminovo":null},{"proposta":"93902","seminovo":"SIM","vendedor":"JOSINEI ANTONIO MOREIRA","unidade":"Matriz","abertura":"2026-06-13T00:00:00","aprovacao":"2026-06-17T17:21:00","criacao_fluxo":"2026-06-17T17:27:00","envio_fluxo_fat":"2026-06-17T17:30:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-06-22T19:28:17","nf_0km":"2026-06-17T17:35:00","nf_seminovo":null},{"proposta":"93181","seminovo":"SIM","vendedor":"FABIANO JOSE DOS SANTOS BELOTO","unidade":"Matriz","abertura":"2026-05-16T00:00:00","aprovacao":"2026-05-18T09:50:00","criacao_fluxo":"2026-05-18T09:51:00","envio_fluxo_fat":"2026-05-18T10:03:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-05-19T21:52:14","nf_0km":"2026-05-18T10:38:00","nf_seminovo":null},{"proposta":"94004","seminovo":"NAO","vendedor":"RAMON VALERIO OLIVEIRA","unidade":"Matriz","abertura":"2026-06-17T00:00:00","aprovacao":"2026-06-22T10:37:00","criacao_fluxo":"2026-06-22T10:40:00","envio_fluxo_fat":"2026-06-22T10:45:00","revisao_fat":"2026-06-22T12:43:00","envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-22T13:52:00","nf_seminovo":null},{"proposta":"94088","seminovo":"SIM","vendedor":"LORIANE CRISTINE DA MOTA CABRAL","unidade":"Matriz","abertura":"2026-06-20T00:00:00","aprovacao":"2026-06-23T15:50:00","criacao_fluxo":"2026-06-22T16:53:00","envio_fluxo_fat":"2026-06-22T17:13:00","revisao_fat":"2026-06-23T15:56:00","envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-23T17:24:00","nf_seminovo":null},{"proposta":"92851","seminovo":"NAO","vendedor":"ADRIANO DOMINGOS NOGUEIRA","unidade":"Matriz","abertura":"2026-05-07T00:00:00","aprovacao":"2026-06-23T15:34:00","criacao_fluxo":"2026-06-23T15:22:00","envio_fluxo_fat":"2026-06-23T15:36:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-23T17:50:00","nf_seminovo":null},{"proposta":"94127","seminovo":"NAO","vendedor":"BRUCE LEE YOCHIME SOUZA HIRATA","unidade":"Matriz","abertura":"2026-06-22T00:00:00","aprovacao":"2026-06-23T17:07:00","criacao_fluxo":"2026-06-23T17:15:00","envio_fluxo_fat":"2026-06-23T17:20:00","revisao_fat":null,"envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":null,"nf_0km":"2026-06-23T17:49:00","nf_seminovo":null},{"proposta":"93814","seminovo":"SIM","vendedor":"LORIANE CRISTINE DA MOTA CABRAL","unidade":"Matriz","abertura":"2026-06-10T00:00:00","aprovacao":"2026-06-18T15:16:00","criacao_fluxo":"2026-06-18T08:35:00","envio_fluxo_fat":"2026-06-18T09:04:00","revisao_fat":"2026-06-18T15:17:00","envio_fluxo_entrada":null,"revisao_entrada":null,"checagem_desp":null,"emplacamento":"2026-06-22T20:35:53","nf_0km":"2026-06-18T15:46:00","nf_seminovo":null}];
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let activeUnit = 'Todas';
+let dateFrom = null, dateTo = null;
+let DATA = dedupe(RAW);
+
+function dedupe(arr) {
+  const seen = new Set();
+  return arr.filter(r => {
+    if (!r.proposta || r.proposta === 'MÉDIA') return false;
+    const k = r.proposta + '|' + r.unidade + '|' + (r.nf_0km||'');
+    if (seen.has(k)) return false;
+    seen.add(k); return true;
+  });
+}
+
+// ─── BUSINESS HOURS ──────────────────────────────────────────────────────────
+function isWorkday(d) { const w = d.getDay(); return w > 0 && w < 6; }
+
+function networkDays(s, e) {
+  let c = 0, cur = new Date(s); cur.setHours(0,0,0,0);
+  const end = new Date(e); end.setHours(0,0,0,0);
+  while (cur <= end) { if (isWorkday(cur)) c++; cur.setDate(cur.getDate()+1); }
+  return c;
+}
+
+function timeClip(d) {
+  const h = d.getHours() + d.getMinutes()/60 + d.getSeconds()/3600;
+  return Math.min(10, Math.max(0, Math.min(h, 18) - 8));
+}
+
+function busHours(startStr, endStr) {
+  if (!startStr || !endStr) return null;
+  const s = new Date(startStr), e = new Date(endStr);
+  if (e <= s) return 0;
+  const nd = networkDays(s, e);
+  const eClip = isWorkday(e) ? timeClip(e) : 0;
+  const sClip = isWorkday(s) ? timeClip(s) : 0;
+  return Math.max(0, (nd-1)*10 + eClip - sClip);
+}
+
+// ─── SLA CALC PER ROW ────────────────────────────────────────────────────────
+function calcSLA(r) {
+  // revisao logic: if rev is filled AND rev < next_stage → use rev as start
+  const s1 = r.abertura, e1 = r.aprovacao;
+  const s2 = e1, e2 = r.criacao_fluxo;
+  const s3 = e2, e3 = r.envio_fluxo_fat;
+
+  // Envio fluxo fat → envio fluxo entrada (c/ revisao fat)
+  const startEnvFat = (r.revisao_fat && r.envio_fluxo_entrada && r.revisao_fat < r.envio_fluxo_entrada)
+    ? r.revisao_fat : r.envio_fluxo_fat;
+  const t4 = busHours(startEnvFat, r.envio_fluxo_entrada);
+
+  // Envio fluxo entrada → checagem desp (c/ revisao entrada)
+  const startEnvEnt = (r.revisao_entrada && r.checagem_desp && r.revisao_entrada < r.checagem_desp)
+    ? r.revisao_entrada : r.envio_fluxo_entrada;
+  const t5 = busHours(startEnvEnt, r.checagem_desp);
+
+  // Checagem → NF 0km (Análise Fat / Checagem CSC)
+  const t6 = busHours(r.checagem_desp, r.nf_0km);
+
+  // Envio fluxo fat → NF 0km (when checagem not filled)
+  const startAnalise = (r.revisao_fat && r.nf_0km && r.revisao_fat < r.nf_0km)
+    ? r.revisao_fat : r.envio_fluxo_fat;
+  const tAnaliseFull = busHours(startAnalise, r.nf_0km);
+
+  // NF 0km → NF Seminovo
+  const t7 = r.seminovo === 'SIM' ? busHours(r.nf_0km, r.nf_seminovo) : null;
+
+  // TOTAL PRINCIPAL — regra varia por filial:
+  // VW Mário Tourinho, Hyundai Marechal, Hyundai Arthur Bernardes → Envio Entrada → NF 0km
+  // Demais → Envio Fluxo Fat → NF 0km
+  const FILIAIS_ENTRADA = ['VW Mário Tourinho', 'Hyundai Marechal', 'Hyundai Arthur Bernardes'];
+  let total;
+  if (FILIAIS_ENTRADA.includes(r.unidade)) {
+    const startTotal = (r.revisao_entrada && r.nf_0km && r.revisao_entrada < r.nf_0km)
+      ? r.revisao_entrada : r.envio_fluxo_entrada;
+    total = busHours(startTotal, r.nf_0km);
+  } else {
+    const startTotal = (r.revisao_fat && r.nf_0km && r.revisao_fat < r.nf_0km)
+      ? r.revisao_fat : r.envio_fluxo_fat;
+    total = busHours(startTotal, r.nf_0km);
+  }
+
+  return {
+    t1: busHours(s1, e1),   // Abertura → Aprovação
+    t2: busHours(s2, e2),   // Aprovação → Criação Fluxo
+    t3: busHours(s3, e3),   // Criação → Envio Fluxo Fat
+    t4,                      // Envio Fluxo Fat → Envio Entrada
+    t5,                      // Envio Entrada → Checagem
+    t6,                      // Checagem → NF 0km
+    tAnaliseFull,            // Envio Fat / Rev → NF 0km
+    t7,                      // NF 0km → NF Seminovo
+    total,                   // Envio Entrada / Rev → NF 0km (principal)
+    hasRevFat: !!r.revisao_fat,
+    hasRevEnt: !!r.revisao_entrada,
+  };
+}
+
+// ─── FORMAT ──────────────────────────────────────────────────────────────────
+function fmt(h) {
+  if (h === null || h === undefined || isNaN(h)) return '—';
+  const totalMin = Math.round(h * 60);
+  const d = Math.floor(totalMin / 600);
+  const rem = totalMin % 600;
+  const hh = Math.floor(rem / 60);
+  const mm = rem % 60;
+  if (d > 0) return `${d}d ${hh}h ${String(mm).padStart(2,'0')}min`;
+  if (hh > 0) return `${hh}h ${String(mm).padStart(2,'0')}min`;
+  return `${mm}min`;
+}
+
+function avg(arr) {
+  const v = arr.filter(x => x !== null && x !== undefined && !isNaN(x));
+  return v.length ? v.reduce((a,b) => a+b, 0) / v.length : null;
+}
+
+// ─── FILTER ──────────────────────────────────────────────────────────────────
+function filtered() {
+  return DATA.filter(r => {
+    if (activeUnit !== 'Todas' && r.unidade !== activeUnit) return false;
+    if (dateFrom || dateTo) {
+      const d = r.abertura ? new Date(r.abertura) : null;
+      if (!d) return false;
+      if (dateFrom && d < new Date(dateFrom)) return false;
+      if (dateTo   && d > new Date(dateTo + 'T23:59:59')) return false;
+    }
+    return true;
+  });
+}
+
+// ─── RENDER ALL ──────────────────────────────────────────────────────────────
+let histChartInst = null, revChartInst = null;
+
+function render() {
+  const rows = filtered();
+  const slas = rows.map(calcSLA);
+
+  renderCards(rows, slas);
+  renderSLA(slas);
+  renderCompare();
+  renderHist(slas);
+  renderRevChart(rows, slas);
+  renderRanking(rows);
+  renderMotivos();
+  renderDetail();
+}
+
+// ─── CARDS ───────────────────────────────────────────────────────────────────
+function renderCards(rows, slas) {
+  const total = rows.length;
+  const comRevFat = rows.filter(r => r.revisao_fat).length;
+  const comRevEnt = rows.filter(r => r.revisao_entrada).length;
+  const totals = slas.map(s => s.total).filter(x => x !== null);
+  const avgTotal = avg(totals);
+  const semNF = rows.filter(r => !r.nf_0km).length;
+
+  document.getElementById('cards').innerHTML = `
+    <div class="card blue">
+      <div class="card-label">Total Propostas</div>
+      <div class="card-value">${total}</div>
+      <div class="card-sub">${rows.filter(r=>r.seminovo==='SIM').length} com seminovo</div>
+    </div>
+    <div class="card amber">
+      <div class="card-label">Revisão Faturamento</div>
+      <div class="card-value">${comRevFat}</div>
+      <div class="card-sub">${Math.round(comRevFat/total*100)}% das propostas</div>
+    </div>
+    <div class="card amber">
+      <div class="card-label">Revisão Entrada</div>
+      <div class="card-value">${comRevEnt}</div>
+      <div class="card-sub">${Math.round(comRevEnt/total*100)}% das propostas</div>
+    </div>
+    <div class="card green">
+      <div class="card-label">Tempo Médio Total</div>
+      <div class="card-value sm">${fmt(avgTotal)}</div>
+      <div class="card-sub">Entrada→NF (VW MT/Hyundai) · Fat→NF (demais)</div>
+    </div>
+    <div class="card red">
+      <div class="card-label">Sem NF 0km</div>
+      <div class="card-value">${semNF}</div>
+      <div class="card-sub">em aberto</div>
+    </div>
+  `;
+}
+
+// ─── SLA BARS ────────────────────────────────────────────────────────────────
+const SLA_STAGES = [
+  { key: 't1', label: 'Abertura → Aprovação Proposta' },
+  { key: 't2', label: 'Aprovação → Criação Fluxo Fat.' },
+  { key: 't3', label: 'Criação → Envio Fluxo Fat.' },
+  { key: 't4', label: 'Envio Fluxo Fat. → Envio Entrada', rev: 'hasRevFat' },
+  { key: 't5', label: 'Envio Entrada → Checagem Despachante', rev: 'hasRevEnt' },
+  { key: 't6', label: 'Checagem Despachante → NF 0km (Análise/CSC)' },
+  { key: 't7', label: 'NF 0km → NF Seminovo', seminovoOnly: true },
+  { key: 'total', label: 'TOTAL (varia por filial — ver regra abaixo)', total: true },
+];
+
+function slaColor(h) {
+  if (h === null) return '#1f3050';
+  if (h <= 4)  return '#22C55E';
+  if (h <= 12) return '#F59E0B';
+  return '#EF4444';
+}
+
+function renderSLA(slas) {
+  const allVals = {};
+  SLA_STAGES.forEach(s => {
+    allVals[s.key] = avg(slas.map(r => r[s.key]));
+  });
+  const maxH = Math.max(...Object.values(allVals).filter(x => x !== null && x < 200), 1);
+
+  document.getElementById('slaList').innerHTML = SLA_STAGES.map(s => {
+    const h = allVals[s.key];
+    const pct = h !== null ? Math.min(100, (h / maxH) * 100) : 0;
+    const col = slaColor(h);
+    const cnt = slas.filter(r => r[s.key] !== null).length;
+    const revNote = s.rev ? `<span style="font-size:10px;color:var(--amber);margin-left:4px">★ c/ revisão</span>` : '';
+    const boldStyle = s.total ? 'font-weight:700;color:var(--text)' : '';
+    return `
+      <div class="sla-row" ${s.total ? 'style="border-top:1px solid var(--border);padding-top:10px;margin-top:4px"' : ''}>
+        <div class="sla-header">
+          <span class="sla-name" style="${boldStyle}">${s.label}${revNote}</span>
+          <span class="sla-time" style="color:${col}">${fmt(h)} <span style="font-size:10px;color:var(--muted);font-weight:400">(${cnt})</span></span>
+        </div>
+        <div class="sla-bar-bg">
+          <div class="sla-bar-fill" style="width:${pct}%;background:${col}"></div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ─── COMPARE ─────────────────────────────────────────────────────────────────
+function renderCompare() {
+  const byUnit = ['Mário Tourinho', 'Matriz'].map(u => {
+    const rows = DATA.filter(r => r.unidade === u);
+    const slas = rows.map(calcSLA);
+    return { u, rows, slas };
+  });
+
+  const metrics = [
+    { label: 'Propostas', fn: (r,s) => r.length },
+    { label: 'Tempo Médio Total', fn: (r,s) => fmt(avg(s.map(x=>x.total))) },
+    { label: 'Abertura → Aprov.', fn: (r,s) => fmt(avg(s.map(x=>x.t1))) },
+    { label: 'Envio Fat.→ NF 0km', fn: (r,s) => fmt(avg(s.map(x=>x.tAnaliseFull))) },
+    { label: '% c/ Rev. Fat.', fn: (r,s) => Math.round(r.filter(x=>x.revisao_fat).length/r.length*100)+'%' },
+    { label: '% c/ Seminovo', fn: (r,s) => Math.round(r.filter(x=>x.seminovo==='SIM').length/r.length*100)+'%' },
+  ];
+
+  document.getElementById('comparePanel').innerHTML = `
+    <div style="display:flex;justify-content:flex-end;gap:20px;margin-bottom:8px">
+      ${byUnit.map(x => `<div style="font-size:11px;font-weight:600;color:var(--blue-light);text-align:right">${x.u}</div>`).join('')}
+    </div>
+    ${metrics.map(m => `
+      <div class="compare-row">
+        <div class="compare-label">${m.label}</div>
+        <div class="compare-vals">
+          ${byUnit.map(x => `<div class="compare-val"><span class="v">${m.fn(x.rows, x.slas)}</span></div>`).join('')}
+        </div>
+      </div>`).join('')}
+  `;
+}
+
+// ─── HISTOGRAM ───────────────────────────────────────────────────────────────
+function renderHist(slas) {
+  const vals = slas.map(s => s.total).filter(x => x !== null && x < 200);
+  const bins = [0,2,4,8,12,24,48,100,200];
+  const labels = ['0–2h','2–4h','4–8h','8–12h','12–24h','1–2d','2–5d','>5d'];
+  const counts = Array(labels.length).fill(0);
+  vals.forEach(v => {
+    for (let i = 0; i < bins.length-1; i++) {
+      if (v >= bins[i] && v < bins[i+1]) { counts[i]++; break; }
+    }
+  });
+  const colors = counts.map((_,i) => {
+    const mid = (bins[i]+bins[i+1])/2;
+    return mid <= 4 ? '#16A34A' : mid <= 12 ? '#D97706' : '#DC2626';
+  });
+  if (histChartInst) histChartInst.destroy();
+  const ctx = document.getElementById('histChart').getContext('2d');
+  histChartInst = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [{ data: counts, backgroundColor: colors, borderRadius: 4, borderSkipped: false }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: '#E2E8F0' }, ticks: { color: '#94A3B8', font: { size: 10 } } },
+        y: { grid: { color: '#E2E8F0' }, ticks: { color: '#94A3B8', font: { size: 10 } }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+// ─── REVISÃO POR VENDEDOR ─────────────────────────────────────────────────────
+function renderRevChart(rows, slas) {
+  const map = {};
+  rows.forEach((r,i) => {
+    const v = r.vendedor.split(' ').slice(0,2).join(' ');
+    if (!map[v]) map[v] = { total: 0, rev: 0 };
+    map[v].total++;
+    if (slas[i].hasRevFat || slas[i].hasRevEnt) map[v].rev++;
+  });
+  const sorted = Object.entries(map).filter(([,v])=>v.total>=2).sort((a,b)=>b[1].rev-a[1].rev).slice(0,10);
+  const labels = sorted.map(([k])=>k);
+  const revs   = sorted.map(([,v])=>v.rev);
+  const oks    = sorted.map(([,v])=>v.total-v.rev);
+  if (revChartInst) revChartInst.destroy();
+  const ctx = document.getElementById('revChart').getContext('2d');
+  revChartInst = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Sem revisão', data: oks, backgroundColor: '#DBEAFE', borderRadius: 4, borderSkipped: false, stack: 's' },
+        { label: 'Com revisão', data: revs, backgroundColor: '#F59E0B', borderRadius: 4, borderSkipped: false, stack: 's' },
+      ]
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { color: '#64748B', font: { size: 10 }, boxWidth: 12, padding: 10 } } },
+      scales: {
+        x: { stacked: true, grid: { color: '#E2E8F0' }, ticks: { color: '#94A3B8', font: { size: 10 } } },
+        y: { stacked: true, grid: { display: false }, ticks: { color: '#64748B', font: { size: 9 } } }
+      }
+    }
+  });
+}
+
+// ─── RANKING ─────────────────────────────────────────────────────────────────
+function renderRanking(rows) {
+  // Group by unidade → build per-filial ranking by NF 0km count
+  const units = [...new Set(rows.map(r => r.unidade))].sort();
+
+  // Per-filial colour palette (cycles)
+  const palette = ['#2563EB','#7C3AED','#0891B2','#059669','#D97706','#DC2626'];
+
+  const container = document.getElementById('rankingFiliais');
+
+  if (!units.length) { container.innerHTML = '<p style="color:var(--muted2);font-size:12px">Sem dados.</p>'; return; }
+
+  container.innerHTML = `<div class="filial-grid">${
+    units.map((unidade, ui) => {
+      const filRows = rows.filter(r => r.unidade === unidade);
+      // Count NF 0km emitidas per vendedor (only rows with nf_0km filled)
+      const vendMap = {};
+      filRows.forEach(r => {
+        if (!r.vendedor) return;
+        if (!vendMap[r.vendedor]) vendMap[r.vendedor] = 0;
+        if (r.nf_0km) vendMap[r.vendedor]++;
+      });
+      const ranked = Object.entries(vendMap)
+        .sort((a,b) => b[1] - a[1]);
+      if (!ranked.length) return '';
+      const maxVal = ranked[0][1];
+      const color  = palette[ui % palette.length];
+      const medalha = (pos) => pos === 1 ? '🥇' : pos === 2 ? '🥈' : pos === 3 ? '🥉' : pos;
+
+      return `<div>
+        <div class="filial-title" style="color:${color};border-color:${color}">${unidade}</div>
+        ${ranked.map(([nome, cnt], i) => {
+          const pos = i + 1;
+          const firstName = nome.split(' ').slice(0,2).join(' ');
+          const pct = maxVal > 0 ? Math.round(cnt / maxVal * 100) : 0;
+          return `<div class="filial-row">
+            <span class="filial-pos">${medalha(pos)}</span>
+            <span class="filial-name" title="${nome}">${firstName}</span>
+            <div class="filial-bar-bg"><div class="filial-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+            <span class="filial-count">${cnt}</span>
+          </div>`;
+        }).join('')}
+      </div>`;
+    }).join('')
+  }</div>`;
+}
+
+// ─── DETAIL TABLE ────────────────────────────────────────────────────────────
+function renderDetail() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const rows = filtered().filter(r =>
+    r.proposta.toLowerCase().includes(q) ||
+    r.vendedor.toLowerCase().includes(q) ||
+    r.unidade.toLowerCase().includes(q)
+  );
+
+  const cols = [
+    { h: 'Proposta', fn: r => r.proposta },
+    { h: 'Unidade',  fn: r => `<span class="badge-unid">${r.unidade==='Mário Tourinho'?'MT':'MZ'}</span>` },
+    { h: 'Vendedor', fn: r => r.vendedor.split(' ').slice(0,2).join(' ') },
+    { h: 'Seminovo', fn: r => r.seminovo==='SIM'?'<span class="badge-seminovo">SIM</span>':'—' },
+    { h: 'Abertura → Aprov.', fn: (r,s) => chipT(s.t1) },
+    { h: 'Aprov. → Criação', fn: (r,s) => chipT(s.t2) },
+    { h: 'Criação → Envio Fat.', fn: (r,s) => chipT(s.t3) },
+    { h: 'Envio Fat. → Entrada', fn: (r,s) => chipT(s.t4) + (s.hasRevFat?'<span class="rev-tag" style="margin-left:3px">★Rev</span>':'') },
+    { h: 'Entrada → Checagem', fn: (r,s) => chipT(s.t5) + (s.hasRevEnt?'<span class="rev-tag" style="margin-left:3px">★Rev</span>':'') },
+    { h: 'Checagem → NF 0km', fn: (r,s) => chipT(s.t6) },
+    { h: 'TOTAL', fn: (r,s) => chipT(s.total, true) },
+  ];
+
+  const table = document.getElementById('detailTable');
+  table.innerHTML = `
+    <thead><tr>${cols.map(c=>`<th>${c.h}</th>`).join('')}</tr></thead>
+    <tbody>${rows.map(r => {
+      const s = calcSLA(r);
+      return `<tr>${cols.map(c => `<td>${c.fn(r,s)}</td>`).join('')}</tr>`;
+    }).join('')}</tbody>`;
+}
+
+function chipT(h, bold = false) {
+  if (h === null || h === undefined) return '<span class="na">—</span>';
+  const col = h <= 4 ? 'status-ok' : h <= 12 ? 'status-warn' : 'status-bad';
+  return `<span class="${col}" ${bold?'style="font-weight:600"':''}>${fmt(h)}</span>`;
+}
+
+// ─── UNIT FILTER ─────────────────────────────────────────────────────────────
+function applyDateFilter() {
+  dateFrom = document.getElementById('dateFrom').value || null;
+  dateTo   = document.getElementById('dateTo').value   || null;
+  const rows = filtered();
+  document.getElementById('updateLabel').textContent =
+    (dateFrom || dateTo)
+      ? `Filtro: ${dateFrom||'início'} → ${dateTo||'hoje'} · ${rows.length} propostas`
+      : `Dados carregados · ${DATA.length} propostas`;
+  render();
+}
+
+function clearDates() {
+  dateFrom = dateTo = null;
+  document.getElementById('dateFrom').value = '';
+  document.getElementById('dateTo').value   = '';
+  document.getElementById('updateLabel').textContent = `Dados carregados · ${DATA.length} propostas`;
+  render();
+}
+
+function setUnit(u) {
+  activeUnit = u;
+  document.querySelectorAll('#unitFilters .filter-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.trim() === u);
+  });
+  render();
+}
+
+// ─── TAB CONFIG ──────────────────────────────────────────────────────────────
+const DEFAULT_TABS = [
+  { tab: 'Faturamentos VW Mario Tourinho',        nome: 'VW Mário Tourinho' },
+  { tab: 'Faturamentos VW Matriz',                nome: 'VW Matriz' },
+  { tab: 'Faturamentos BYD Mario Tourinho',        nome: 'BYD Mário Tourinho' },
+  { tab: 'Faturamentos BYD Chile',                nome: 'BYD Chile' },
+  { tab: 'Faturamentos BYD Portão',               nome: 'BYD Portão' },
+  { tab: 'Faturamentos BYD São José',             nome: 'BYD São José dos Pinhais' },
+  { tab: 'Faturamentos Hyundai Marechal',         nome: 'Hyundai Marechal' },
+  { tab: 'Faturamentos Hyundai Arthur Bernardes', nome: 'Hyundai Arthur Bernardes' },
+];
+
+function initTabList() {
+  let saved = null;
+  try { saved = localStorage.getItem('sla_tabs'); } catch(e) {}
+  const tabs = saved ? JSON.parse(saved) : DEFAULT_TABS;
+  const list = document.getElementById('tabList');
+  list.innerHTML = '';
+  tabs.forEach(t => addTabRow(t.tab, t.nome));
+}
+
+function addTabRow(tabVal='', nomeVal='') {
+  const list = document.getElementById('tabList');
+  const row = document.createElement('div');
+  row.className = 'tab-row';
+  row.innerHTML = `
+    <input class="tab-input" placeholder="Nome exato da aba" value="${tabVal.replace(/"/g,'&quot;')}">
+    <input class="tab-input" placeholder="Exibir como" value="${nomeVal.replace(/"/g,'&quot;')}">
+    <button class="tab-del" onclick="this.parentElement.remove()" title="Remover">×</button>`;
+  list.appendChild(row);
+}
+
+function saveTabs() {
+  const rows = document.querySelectorAll('#tabList .tab-row');
+  const tabs = [...rows].map(r => ({
+    tab:  r.querySelectorAll('.tab-input')[0].value.trim(),
+    nome: r.querySelectorAll('.tab-input')[1].value.trim(),
+  })).filter(t => t.tab && t.nome);
+  try { localStorage.setItem('sla_tabs', JSON.stringify(tabs)); } catch(e) {}
+  return tabs;
+}
+
+function toggleConfig() {
+  document.getElementById('configDrawer').classList.toggle('open');
+}
+
+function extractSheetId(url) {
+  // Detect wrong format: published URL (/d/e/2PACX-...)
+  if (url.includes('/d/e/') || url.includes('2PACX-')) {
+    const status = document.getElementById('syncStatus');
+    status.innerHTML = `<span style="color:var(--red)">
+      ⚠ Link incorreto. Esse é o link de publicação — o dashboard precisa do link de edição.<br>
+      Abra a planilha normalmente e copie o link da <strong>barra de endereço do navegador</strong>:<br>
+      <code style="font-size:10px;background:var(--surface2);padding:2px 6px;border-radius:3px">
+      https://docs.google.com/spreadsheets/d/<strong>1AbCdEf...</strong>/edit</code>
+    </span>`;
+    return null;
+  }
+  const m = url.match(/\/d\/([a-zA-Z0-9_-]{20,})/);
+  return m ? m[1] : null;
+}
+
+// ─── MULTI-TAB SYNC (fetch CSV — funciona em GitHub Pages) ──────────────────
+async function fetchSheetCSV(sheetId, tabName) {
+  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tabName)}`;
+  const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const text = await res.text();
+  if (text.includes('Login Required') || text.includes('Sign in')) throw new Error('Planilha não é pública');
+  if (text.trim().length < 10) throw new Error('Aba vazia ou não encontrada');
+  return text;
+}
+
+async function syncAllTabs() {
+  const baseUrl = (document.getElementById('sheetBaseUrl').value || '').trim();
+  const sheetId = extractSheetId(baseUrl);
+  if (!sheetId) return;
+
+  const tabs = saveTabs();
+  if (!tabs.length) { alert('Adicione ao menos uma aba na configuração.'); return; }
+
+  // Save URL for auto-sync on next page load
+  try { localStorage.setItem('sla_sheet_url', baseUrl); } catch(e) {}
+
+  const btn = document.getElementById('syncBtn');
+  const status = document.getElementById('syncStatus');
+  btn.disabled = true;
+
+  const motFat = [], motEnt = [];
+  const allRows = [];
+  const errors = [];
+  let ok = 0;
+
+  for (const { tab, nome } of tabs) {
+    status.textContent = `Buscando "${nome}"...`;
+    try {
+      const csvText = await fetchSheetCSV(sheetId, tab);
+      const parsed = parseTabCSV(csvText, nome, motFat, motEnt);
+      allRows.push(...parsed);
+      ok++;
+      status.innerHTML = `<span style="color:var(--green)">✓ ${nome} — ${parsed.length} registros</span>`;
+    } catch(e) {
+      // Skip missing tabs silently, only log real errors
+      if (!e.message.includes('vazia') && !e.message.includes('não encontrada')) {
+        errors.push(`<b>${nome}</b>: ${e.message}`);
+      }
+      console.warn(`Aba "${tab}":`, e.message);
+    }
+  }
+
+  btn.disabled = false;
+
+  if (!allRows.length) {
+    status.innerHTML = `<span style="color:var(--red)">
+      ⚠ Nenhum dado carregado.<br>
+      ${errors.map(e => '• ' + e).join('<br>')}
+      <br><br>Verifique:<br>
+      1. Planilha compartilhada como <b>"Qualquer pessoa com o link → Leitor"</b><br>
+      2. Nomes das abas idênticos aos da planilha<br>
+      3. Link de edição colado (não o de publicação)
+    </span>`;
+    return;
+  }
+
+  MOTIVOS_FAT_LIVE = motFat;
+  MOTIVOS_ENT_LIVE = motEnt;
+  DATA = dedupe(allRows);
+  activeUnit = 'Todas';
+
+  const failMsg = errors.length ? `<br><span style="color:var(--amber)">⚠ ${errors.map(e=>e.replace(/<b>|<\/b>/g,'')).join(', ')}</span>` : '';
+  status.innerHTML = `<span style="color:var(--green)">✓ Sincronizado — ${DATA.length} registros em ${ok} filiais${failMsg}</span>`;
+  document.getElementById('updateLabel').textContent = `Sincronizado em ${new Date().toLocaleString('pt-BR')} · ${DATA.length} registros · ${ok} filiais`;
+  document.getElementById('configDrawer').classList.remove('open');
+  buildUnitFilters();
+  render();
+}
+
+// ─── GVIZ PARSER (replaces CSV parser for JSONP response) ────────────────────
+function parseTabGVIZ(cols, rows, nomeFilial, motFat, motEnt) {
+  const header = cols.map(c => c.toLowerCase().trim());
+
+  const ci = (...keywords) => {
+    for (const kw of keywords) {
+      const idx = header.findIndex(h => h.includes(kw.toLowerCase()));
+      if (idx >= 0) return idx;
+    }
+    return -1;
+  };
+
+  const iAbert   = ci('abertura proposta');
+  const iAprov   = ci('aprovação proposta', 'aprovacao proposta');
+  const iCriacao = ci('criação fluxo', 'criacao fluxo');
+  const iEnvFat  = ci('envio e hora fluxo fat', 'envio fluxo faturamento');
+  const iRevFat  = ci('revisão correção fat', 'revisao correcao fat', 'revisão fat');
+  const iMotFat  = ci('motivo revisão / coreção fat', 'motivo revisão / corec', 'motivo fat');
+  const iEnvEnt  = ci('envio fluxo entrada', 'pré-checagem');
+  const iRevEnt  = ci('revisão correção entrada', 'revisao entrada');
+  const iMotEnt  = ci('motivo revisão / coreção entrada', 'motivo entrada');
+  const iCheck   = ci('checagem despachante');
+  const iEmplac  = ci('emplacamento');
+  const iNF0     = ci('emissão nota fiscal 0', 'emissao nota fiscal 0');
+  const iNFSem   = ci('nota fiscal seminovo');
+  const iProp    = ci('proposta');
+  const iSem     = ci('seminovo');
+  const iVend    = ci('vendedor');
+
+  const get = (row, idx) => idx >= 0 && idx < row.length ? row[idx] : '';
+
+  return rows.flatMap(row => {
+    const prop = get(row, iProp).trim();
+    if (!prop || ['média','media'].includes(prop.toLowerCase())) return [];
+
+    const motF = get(row, iMotFat).trim();
+    const motE = get(row, iMotEnt).trim();
+    if (motF && motF !== ' ') motFat.push({ motivo: motF.toUpperCase(), unidade: nomeFilial });
+    if (motE && motE !== ' ') motEnt.push({ motivo: motE.toUpperCase(), unidade: nomeFilial });
+
+    const ts = v => (v && v.trim() && v.trim() !== ' ') ? v : null;
+
+    return [{
+      proposta:            prop,
+      seminovo:            get(row, iSem).trim().toUpperCase() === 'SIM' ? 'SIM' : 'NAO',
+      vendedor:            get(row, iVend).trim(),
+      unidade:             nomeFilial,
+      abertura:            ts(get(row, iAbert)),
+      aprovacao:           ts(get(row, iAprov)),
+      criacao_fluxo:       ts(get(row, iCriacao)),
+      envio_fluxo_fat:     ts(get(row, iEnvFat)),
+      revisao_fat:         ts(get(row, iRevFat)),
+      envio_fluxo_entrada: ts(get(row, iEnvEnt)),
+      revisao_entrada:     ts(get(row, iRevEnt)),
+      checagem_desp:       ts(get(row, iCheck)),
+      emplacamento:        ts(get(row, iEmplac)),
+      nf_0km:              ts(get(row, iNF0)),
+      nf_seminovo:         ts(get(row, iNFSem)),
+    }];
+  });
+}
+
+// ─── DYNAMIC UNIT FILTERS ────────────────────────────────────────────────────
+function buildUnitFilters() {
+  const units = [...new Set(DATA.map(r => r.unidade))].sort();
+  const container = document.getElementById('unitFilters');
+  container.innerHTML = `<button class="filter-btn active" onclick="setUnit('Todas')">Todas</button>` +
+    units.map(u => `<button class="filter-btn" onclick='setUnit(${JSON.stringify(u)})'>${u}</button>`).join('');
+}
+
+// ─── CSV PARSER (multi-tab, flexible columns) ────────────────────────────────
+function parseTabCSV(text, nomeFilial, motFat, motEnt) {
+  const lines = text.split('\n').filter(l => l.trim());
+  if (lines.length < 2) return [];
+  const header = splitCSVLine(lines[0]).map(h => h.toLowerCase().trim());
+
+  const ci = (...keywords) => {
+    for (const kw of keywords) {
+      const idx = header.findIndex(h => h.includes(kw.toLowerCase()));
+      if (idx >= 0) return idx;
+    }
+    return -1;
+  };
+
+  const iAbert   = ci('abertura proposta');
+  const iAprov   = ci('aprovação proposta', 'aprovacao proposta');
+  const iCriacao = ci('criação fluxo', 'criacao fluxo');
+  const iEnvFat  = ci('envio e hora fluxo fat', 'envio fluxo faturamento');
+  const iRevFat  = ci('revisão correção fat', 'revisao correcao fat');
+  const iMotFat  = ci('motivo revisão / coreção fat', 'motivo revisão');
+  const iEnvEnt  = ci('envio fluxo entrada', 'pré-checagem');
+  const iRevEnt  = ci('revisão correção entrada', 'revisao entrada');
+  const iMotEnt  = ci('motivo revisão / coreção entrada');
+  const iCheck   = ci('checagem despachante');
+  const iEmplac  = ci('emplacamento');
+  const iNF0     = ci('emissão nota fiscal 0', 'emissao nota fiscal 0');
+  const iNFSem   = ci('nota fiscal seminovo');
+  const iProp    = ci('proposta');
+  const iSem     = ci('seminovo');
+  const iVend    = ci('vendedor');
+
+  return lines.slice(1).flatMap(line => {
+    const v = splitCSVLine(line);
+    const prop = v[iProp] ? v[iProp].trim() : '';
+    if (!prop || ['média','media',''].includes(prop.toLowerCase())) return [];
+
+    const motF = iMotFat >= 0 ? (v[iMotFat]||'').trim() : '';
+    const motE = iMotEnt >= 0 ? (v[iMotEnt]||'').trim() : '';
+    if (motF && motF !== ' ') motFat.push({ motivo: motF.toUpperCase(), unidade: nomeFilial });
+    if (motE && motE !== ' ') motEnt.push({ motivo: motE.toUpperCase(), unidade: nomeFilial });
+
+    return [{
+      proposta:            prop,
+      seminovo:            ((v[iSem]||'').trim().toUpperCase()==='SIM') ? 'SIM' : 'NAO',
+      vendedor:            (v[iVend]||'').trim(),
+      unidade:             nomeFilial,
+      abertura:            parseTs(v[iAbert]),
+      aprovacao:           parseTs(v[iAprov]),
+      criacao_fluxo:       parseTs(v[iCriacao]),
+      envio_fluxo_fat:     parseTs(v[iEnvFat]),
+      revisao_fat:         parseTs(v[iRevFat]),
+      envio_fluxo_entrada: parseTs(v[iEnvEnt]),
+      revisao_entrada:     parseTs(v[iRevEnt]),
+      checagem_desp:       parseTs(v[iCheck]),
+      emplacamento:        parseTs(v[iEmplac]),
+      nf_0km:              parseTs(v[iNF0]),
+      nf_seminovo:         parseTs(v[iNFSem]),
+    }];
+  });
+}
+
+function splitCSVLine(line) {
+  const vals = []; let cur = ''; let inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') inQ = !inQ;
+    else if (c === ',' && !inQ) { vals.push(cur.trim()); cur = ''; }
+    else cur += c;
+  }
+  vals.push(cur.trim());
+  return vals;
+}
+
+function parseTs(v) {
+  if (!v || v.trim() === '' || v.trim() === ' ') return null;
+  const d = new Date(v.trim());
+  return isNaN(d) ? null : d.toISOString();
+}
+
+// ─── MOTIVOS ─────────────────────────────────────────────────────────────────
+const MOTIVOS_FAT_RAW = [{"motivo":"CADASTRO APOLLO DIVERGENTE","unidade":"VW Mário Tourinho"},{"motivo":"COMPROVANTE DE ENDEREÇO","unidade":"VW Mário Tourinho"},{"motivo":"VALORES DAS CORTESIAS INCORRETAS","unidade":"VW Mário Tourinho"},{"motivo":"ASSINATURA INCORRETA","unidade":"VW Mário Tourinho"},{"motivo":"VALORES DAS CORTESIAS INCORRETAS","unidade":"VW Mário Tourinho"},{"motivo":"VEICULO NÃO DISPONÍVEL NO ESTOQUE","unidade":"VW Mário Tourinho"},{"motivo":"ASSINATURA INCORRETA","unidade":"VW Mário Tourinho"},{"motivo":"VALOR TRANSFERÊNCIA / EMPLACAMENTO","unidade":"VW Mário Tourinho"},{"motivo":"VALOR TRANSFERÊNCIA / EMPLACAMENTO","unidade":"VW Mário Tourinho"},{"motivo":"ENDEREÇO CADASTRADO ERRADO","unidade":"VW Mário Tourinho"},{"motivo":"COMPROVANTE DE ENDEREÇO","unidade":"VW Mário Tourinho"},{"motivo":"DEC ERRADA","unidade":"VW Mário Tourinho"},{"motivo":"VEICULO NÃO DISPONÍVEL NO ESTOQUE","unidade":"VW Mário Tourinho"},{"motivo":"AUTORIZAÇÃO (EMAIL)","unidade":"VW Mário Tourinho"},{"motivo":"VALOR TRANSFERÊNCIA / EMPLACAMENTO","unidade":"VW Mário Tourinho"},{"motivo":"COMPROVANTE DE ENDEREÇO","unidade":"VW Mário Tourinho"},{"motivo":"PROCESSO DO SMARTSARE INCORRETO","unidade":"VW Mário Tourinho"},{"motivo":"ASSINATURA INCORRETA","unidade":"VW Mário Tourinho"},{"motivo":"VALOR TRANSFERÊNCIA / EMPLACAMENTO","unidade":"VW Mário Tourinho"},{"motivo":"DEC ERRADA","unidade":"VW Mário Tourinho"},{"motivo":"ASSINATURA INCORRETA","unidade":"VW Mário Tourinho"},{"motivo":"DEC ERRADA","unidade":"VW Mário Tourinho"},{"motivo":"DEC ERRADA","unidade":"VW Mário Tourinho"},{"motivo":"TERMO DE CIÊNCIA","unidade":"VW Mário Tourinho"},{"motivo":"COMPROVANTE DE ENDEREÇO","unidade":"VW Matriz"},{"motivo":"VEICULO NÃO DISPONÍVEL NO ESTOQUE","unidade":"VW Matriz"},{"motivo":"ASSINATURA INCORRETA","unidade":"VW Matriz"},{"motivo":"DEC ERRADA","unidade":"VW Matriz"},{"motivo":"DEC ERRADA","unidade":"VW Matriz"},{"motivo":"COMPROVANTE DE ENDEREÇO","unidade":"VW Matriz"},{"motivo":"VEICULO NÃO DISPONÍVEL NO ESTOQUE","unidade":"VW Matriz"},{"motivo":"VEICULO NÃO DISPONÍVEL NO ESTOQUE","unidade":"VW Matriz"},{"motivo":"COMPROVANTE DE ENDEREÇO","unidade":"VW Matriz"},{"motivo":"VALORES DAS CORTESIAS INCORRETAS","unidade":"VW Matriz"},{"motivo":"COMPROVANTE DE ENDEREÇO","unidade":"VW Matriz"},{"motivo":"VEICULO NÃO DISPONÍVEL NO ESTOQUE","unidade":"VW Matriz"},{"motivo":"VEICULO NÃO DISPONÍVEL NO ESTOQUE","unidade":"VW Matriz"},{"motivo":"CADASTRO APOLLO DIVERGENTE","unidade":"VW Matriz"},{"motivo":"VALORES DAS CORTESIAS INCORRETAS","unidade":"VW Matriz"},{"motivo":"VALORES DAS CORTESIAS INCORRETAS","unidade":"VW Matriz"},{"motivo":"VALORES DAS CORTESIAS INCORRETAS","unidade":"VW Matriz"},{"motivo":"VALOR TRANSFERÊNCIA / EMPLACAMENTO","unidade":"VW Matriz"}];
+const MOTIVOS_ENT_RAW = [{"motivo":"AVALIACAO INCORRETA","unidade":"VW Mário Tourinho"},{"motivo":"CONTRATO DE COMPRA E VENDA INCORRETO","unidade":"VW Mário Tourinho"},{"motivo":"CERTIDÃO DE CASAMENTO/ AVERBAÇÃO PENDENTE","unidade":"VW Mário Tourinho"},{"motivo":"DUT/ ATPV INCORRETO","unidade":"VW Mário Tourinho"},{"motivo":"DECLARACAO E AUTORIZACAO DE COBRANCA PJ PENDENTE","unidade":"VW Mário Tourinho"},{"motivo":"PROPOSTA INCORRETA","unidade":"VW Mário Tourinho"}];
+let MOTIVOS_FAT_LIVE = null;
+let MOTIVOS_ENT_LIVE = null;
+
+function topMotivos(rawList, unit, n=10) {
+  const src = unit === 'Todas' ? rawList : rawList.filter(r => r.unidade === unit);
+  const map = {};
+  src.forEach(r => { map[r.motivo] = (map[r.motivo]||0) + 1; });
+  return Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,n);
+}
+
+function renderMotivos() {
+  const unit = activeUnit;
+  const fatSrc = MOTIVOS_FAT_LIVE || MOTIVOS_FAT_RAW;
+  const entSrc = MOTIVOS_ENT_LIVE || MOTIVOS_ENT_RAW;
+  [['Fat', fatSrc], ['Ent', entSrc]].forEach(([tipo, raw]) => {
+    const top = topMotivos(raw, unit);
+    const el = document.getElementById('motivos'+tipo);
+    if (!top.length) { el.innerHTML = '<p style="color:var(--muted2);font-size:12px;padding:8px 0">Sem dados para o filtro selecionado.</p>'; return; }
+    const max = top[0][1];
+    const colors = ['#2563EB','#7C3AED','#0891B2','#059669','#D97706','#DC2626','#9333EA','#0284C7','#15803D','#B45309'];
+    el.innerHTML = top.map(([motivo, count], i) => `
+      <div class="motivo-row">
+        <span class="motivo-rank">${i+1}</span>
+        <span class="motivo-label">${motivo}</span>
+        <div class="motivo-bar-bg"><div class="motivo-bar-fill" style="width:${Math.round(count/max*100)}%;background:${colors[i%colors.length]}"></div></div>
+        <span class="motivo-count">${count}</span>
+      </div>`).join('');
+  });
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+document.getElementById('footerDate').textContent = new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+// Remap embedded data unidade names to new naming
+DATA = DATA.map(r => ({...r, unidade: r.unidade === 'Mário Tourinho' ? 'VW Mário Tourinho' : r.unidade === 'Matriz' ? 'VW Matriz' : r.unidade }));
+initTabList();
+buildUnitFilters();
+render();
+
+// ─── AUTO-SYNC ON LOAD ───────────────────────────────────────────────────────
+// Restore saved URL and auto-sync if available
+(async () => {
+  try {
+    const savedUrl = localStorage.getItem('sla_sheet_url');
+    if (savedUrl) {
+      document.getElementById('sheetBaseUrl').value = savedUrl;
+      // Auto-sync silently on page load
+      await syncAllTabs();
+    }
+  } catch(e) { console.warn('Auto-sync failed:', e); }
+})();
+
+</script>
+</body>
+</html>
